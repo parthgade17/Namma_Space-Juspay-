@@ -1,42 +1,32 @@
 import React, { useState, useEffect } from 'react';
 import { useStore } from '../state/useStore';
 import {
-  Layers,
-  Tag,
-  Sun,
-  Grid,
-  Sparkles,
-  Zap,
-  Shield,
-  HelpCircle,
   Activity,
   SlidersHorizontal,
+  Layers,
+  Tag,
+  Maximize2,
+  Sliders,
+  Check,
   ChevronDown,
   ChevronUp,
 } from 'lucide-react';
 
 export const ControlsOverlay: React.FC = () => {
-  const showCeiling = useStore((s) => s.showCeiling);
+  const showNavLayer = useStore((s) => s.showNavLayer);
+  const toggleNavLayer = useStore((s) => s.toggleNavLayer);
   const showLabels = useStore((s) => s.showLabels);
-  const showShadows = useStore((s) => s.showShadows);
-  const showWireframe = useStore((s) => s.showWireframe);
-  const showPointCloud = useStore((s) => s.showPointCloud);
-  const performanceMode = useStore((s) => s.performanceMode);
-  const collisionEnabled = useStore((s) => s.collisionEnabled);
-
-  const toggleCeiling = useStore((s) => s.toggleCeiling);
-  const toggleLabels = useStore((s) => s.toggleLabels);
-  const toggleShadows = useStore((s) => s.toggleShadows);
-  const toggleWireframe = useStore((s) => s.toggleWireframe);
-  const togglePointCloud = useStore((s) => s.togglePointCloud);
-  const togglePerformanceMode = useStore((s) => s.togglePerformanceMode);
-  const toggleCollision = useStore((s) => s.toggleCollision);
-
+  const setShowLabels = useStore((s) => s.setShowLabels);
+  const quality = useStore((s) => s.quality);
+  const setQuality = useStore((s) => s.setQuality);
+  const isCalibrationOpen = useStore((s) => s.isCalibrationOpen);
+  const toggleCalibration = useStore((s) => s.toggleCalibration);
+  const isAlignMode = useStore((s) => s.isAlignMode);
+  const toggleAlignMode = useStore((s) => s.toggleAlignMode);
   const fps = useStore((s) => s.fps);
   const setFps = useStore((s) => s.setFps);
 
-  const [isOpen, setIsOpen] = useState(false);
-  const [showHelp, setShowHelp] = useState(false);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
   // Compute live FPS
   useEffect(() => {
@@ -59,190 +49,135 @@ export const ControlsOverlay: React.FC = () => {
 
   return (
     <div className="absolute bottom-4 left-4 z-30 select-none pointer-events-auto flex flex-col gap-2">
-      
-      {/* Help Modal Popup */}
-      {showHelp && (
-        <div className="glass-panel-glow rounded-2xl p-4 w-72 mb-2 text-xs border border-slate-700 shadow-2xl animate-in fade-in slide-in-from-bottom duration-150">
-          <div className="flex items-center justify-between pb-2 border-b border-slate-700">
-            <span className="font-bold text-white flex items-center gap-1.5">
-              <HelpCircle className="w-4 h-4 text-emerald-400" />
-              Controls & Shortcuts
+      {/* Settings Popover Drawer */}
+      {isSettingsOpen && (
+        <div className="rounded-2xl p-4 w-72 bg-[rgba(15,17,20,0.85)] backdrop-blur-xl border border-white/10 shadow-2xl text-xs mb-1 animate-in fade-in slide-in-from-bottom-2 duration-150">
+          <div className="flex items-center justify-between pb-2.5 border-b border-white/10 font-bold text-white">
+            <span className="flex items-center gap-1.5">
+              <SlidersHorizontal className="w-4 h-4 text-cyan-400" />
+              Settings & View Options
             </span>
             <button
-              onClick={() => setShowHelp(false)}
+              onClick={() => setIsSettingsOpen(false)}
               className="text-slate-400 hover:text-white"
             >
               ✕
             </button>
           </div>
-          <div className="py-2.5 space-y-2 text-slate-300">
-            <div className="flex justify-between">
-              <span className="text-slate-400">Move Forward/Back:</span>
-              <kbd className="px-1.5 py-0.5 rounded bg-slate-800 text-[10px] font-mono border border-slate-700">W / S</kbd>
+
+          <div className="py-2.5 space-y-3">
+            {/* Resolution / Quality */}
+            <div>
+              <span className="text-[10px] text-slate-400 uppercase font-semibold block mb-1.5">
+                Rendering Quality
+              </span>
+              <div className="grid grid-cols-3 gap-1 bg-black/40 p-1 rounded-xl border border-white/5">
+                {(['high', 'balanced', 'low'] as const).map((q) => (
+                  <button
+                    key={q}
+                    onClick={() => setQuality(q)}
+                    className={`py-1 rounded-lg text-[11px] font-medium capitalize transition-all ${
+                      quality === q
+                        ? 'bg-cyan-500 text-slate-950 font-bold shadow'
+                        : 'text-slate-400 hover:text-white'
+                    }`}
+                  >
+                    {q}
+                  </button>
+                ))}
+              </div>
             </div>
-            <div className="flex justify-between">
-              <span className="text-slate-400">Strafe Left/Right:</span>
-              <kbd className="px-1.5 py-0.5 rounded bg-slate-800 text-[10px] font-mono border border-slate-700">A / D</kbd>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-slate-400">Sprint / Run:</span>
-              <kbd className="px-1.5 py-0.5 rounded bg-slate-800 text-[10px] font-mono border border-slate-700">Shift</kbd>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-slate-400">Look Around:</span>
-              <span className="text-emerald-400 text-[11px]">Mouse Lock / Touch</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-slate-400">Inspect Object:</span>
-              <span className="text-emerald-400 text-[11px]">Left Click Object</span>
+
+            {/* Nav Layer Toggle */}
+            <div className="pt-2 border-t border-white/10 space-y-2">
+              <button
+                onClick={toggleNavLayer}
+                className={`w-full flex items-center justify-between px-3 py-2 rounded-xl border text-xs font-medium transition-all ${
+                  showNavLayer
+                    ? 'bg-cyan-950/40 border-cyan-500/50 text-cyan-300'
+                    : 'bg-slate-900/40 border-white/5 text-slate-400 hover:text-white'
+                }`}
+              >
+                <span className="flex items-center gap-2">
+                  <Layers className="w-3.5 h-3.5" />
+                  Show Nav Layer
+                </span>
+                <span className="text-[10px] font-mono">{showNavLayer ? 'ON' : 'OFF'}</span>
+              </button>
+              {showNavLayer && (
+                <div className="text-[10px] text-cyan-400/80 px-1 font-mono">
+                  Navigation layer (floor-plan proxy)
+                </div>
+              )}
+
+              {/* Labels Toggle */}
+              <button
+                onClick={() => setShowLabels(!showLabels)}
+                className={`w-full flex items-center justify-between px-3 py-2 rounded-xl border text-xs font-medium transition-all ${
+                  showLabels
+                    ? 'bg-cyan-950/40 border-cyan-500/50 text-cyan-300'
+                    : 'bg-slate-900/40 border-white/5 text-slate-400 hover:text-white'
+                }`}
+              >
+                <span className="flex items-center gap-2">
+                  <Tag className="w-3.5 h-3.5" />
+                  3D Room Labels
+                </span>
+                <span className="text-[10px] font-mono">{showLabels ? 'ON' : 'OFF'}</span>
+              </button>
+
+              {/* Floor Plan Alignment Mode Toggle */}
+              <button
+                onClick={toggleAlignMode}
+                className={`w-full flex items-center justify-between px-3 py-2 rounded-xl border text-xs font-medium transition-all ${
+                  isAlignMode
+                    ? 'bg-cyan-500 text-slate-950 font-bold'
+                    : 'bg-slate-900/40 border-white/5 text-slate-400 hover:text-white'
+                }`}
+              >
+                <span className="flex items-center gap-2">
+                  <Sliders className="w-3.5 h-3.5" />
+                  Align Floor Plan
+                </span>
+                <span className="text-[10px] font-mono">{isAlignMode ? 'ACTIVE' : 'START'}</span>
+              </button>
+
+              {/* Calibration Panel Toggle (Key T) */}
+              <button
+                onClick={toggleCalibration}
+                className={`w-full flex items-center justify-between px-3 py-2 rounded-xl border text-xs font-medium transition-all ${
+                  isCalibrationOpen
+                    ? 'bg-cyan-950/40 border-cyan-500/50 text-cyan-300'
+                    : 'bg-slate-900/40 border-white/5 text-slate-400 hover:text-white'
+                }`}
+              >
+                <span className="flex items-center gap-2">
+                  <Maximize2 className="w-3.5 h-3.5" />
+                  Splat Calibration (Key T)
+                </span>
+                <span className="text-[10px] font-mono">{isCalibrationOpen ? 'OPEN' : 'T'}</span>
+              </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Toggles Panel */}
-      <div className="glass-panel rounded-2xl border border-slate-700/60 p-2 shadow-2xl">
-        <div className="flex items-center gap-2">
-          
-          {/* FPS Badge */}
-          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-slate-900/90 border border-slate-800 text-[11px] font-mono text-emerald-400">
-            <Activity className="w-3.5 h-3.5" />
-            <span>{fps} FPS</span>
-          </div>
-
-          {/* Quick Toggle Controls Button */}
-          <button
-            onClick={() => setIsOpen(!isOpen)}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-slate-200 text-xs font-medium border border-slate-700 transition-colors"
-          >
-            <SlidersHorizontal className="w-3.5 h-3.5 text-cyan-400" />
-            <span>Rendering Toggles</span>
-            {isOpen ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronUp className="w-3.5 h-3.5" />}
-          </button>
-
-          {/* Help Button */}
-          <button
-            onClick={() => setShowHelp(!showHelp)}
-            className="p-1.5 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-slate-400 hover:text-white border border-slate-700"
-            title="Shortcuts guide"
-          >
-            <HelpCircle className="w-4 h-4" />
-          </button>
+      {/* Persistent Bottom Bar: FPS + Settings Popover Button */}
+      <div className="flex items-center gap-2 p-1.5 rounded-2xl bg-[rgba(15,17,20,0.6)] backdrop-blur-md border border-white/10 shadow-xl">
+        <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-black/40 border border-white/5 text-[11px] font-mono text-cyan-400">
+          <Activity className="w-3.5 h-3.5" />
+          <span>{fps} fps</span>
         </div>
 
-        {/* Collapsible Toggles Drawer */}
-        {isOpen && (
-          <div className="pt-3 mt-2 border-t border-slate-800 grid grid-cols-2 gap-1.5 min-w-[260px] animate-in fade-in duration-150">
-            
-            {/* Ceiling */}
-            <button
-              onClick={toggleCeiling}
-              className={`flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs font-medium border transition-colors ${
-                showCeiling
-                  ? 'bg-emerald-950/40 border-emerald-500/50 text-emerald-300'
-                  : 'bg-slate-900/60 border-slate-800 text-slate-400 hover:text-white'
-              }`}
-            >
-              <span className="flex items-center gap-1.5">
-                <Layers className="w-3.5 h-3.5" /> Ceiling
-              </span>
-              <span className="text-[10px] font-mono">{showCeiling ? 'ON' : 'OFF'}</span>
-            </button>
-
-            {/* Labels */}
-            <button
-              onClick={toggleLabels}
-              className={`flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs font-medium border transition-colors ${
-                showLabels
-                  ? 'bg-emerald-950/40 border-emerald-500/50 text-emerald-300'
-                  : 'bg-slate-900/60 border-slate-800 text-slate-400 hover:text-white'
-              }`}
-            >
-              <span className="flex items-center gap-1.5">
-                <Tag className="w-3.5 h-3.5" /> 3D Labels
-              </span>
-              <span className="text-[10px] font-mono">{showLabels ? 'ON' : 'OFF'}</span>
-            </button>
-
-            {/* Shadows */}
-            <button
-              onClick={toggleShadows}
-              className={`flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs font-medium border transition-colors ${
-                showShadows
-                  ? 'bg-emerald-950/40 border-emerald-500/50 text-emerald-300'
-                  : 'bg-slate-900/60 border-slate-800 text-slate-400 hover:text-white'
-              }`}
-            >
-              <span className="flex items-center gap-1.5">
-                <Sun className="w-3.5 h-3.5" /> Shadows
-              </span>
-              <span className="text-[10px] font-mono">{showShadows ? 'ON' : 'OFF'}</span>
-            </button>
-
-            {/* Wireframe */}
-            <button
-              onClick={toggleWireframe}
-              className={`flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs font-medium border transition-colors ${
-                showWireframe
-                  ? 'bg-emerald-950/40 border-emerald-500/50 text-emerald-300'
-                  : 'bg-slate-900/60 border-slate-800 text-slate-400 hover:text-white'
-              }`}
-            >
-              <span className="flex items-center gap-1.5">
-                <Grid className="w-3.5 h-3.5" /> Wireframe
-              </span>
-              <span className="text-[10px] font-mono">{showWireframe ? 'ON' : 'OFF'}</span>
-            </button>
-
-            {/* Point Cloud */}
-            <button
-              onClick={togglePointCloud}
-              className={`flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs font-medium border transition-colors ${
-                showPointCloud
-                  ? 'bg-cyan-950/40 border-cyan-500/50 text-cyan-300'
-                  : 'bg-slate-900/60 border-slate-800 text-slate-400 hover:text-white'
-              }`}
-            >
-              <span className="flex items-center gap-1.5">
-                <Sparkles className="w-3.5 h-3.5" /> LiDAR Points
-              </span>
-              <span className="text-[10px] font-mono">{showPointCloud ? 'ON' : 'OFF'}</span>
-            </button>
-
-            {/* Performance Mode */}
-            <button
-              onClick={togglePerformanceMode}
-              className={`flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs font-medium border transition-colors ${
-                performanceMode
-                  ? 'bg-amber-950/40 border-amber-500/50 text-amber-300'
-                  : 'bg-slate-900/60 border-slate-800 text-slate-400 hover:text-white'
-              }`}
-            >
-              <span className="flex items-center gap-1.5">
-                <Zap className="w-3.5 h-3.5" /> Low-End Mode
-              </span>
-              <span className="text-[10px] font-mono">{performanceMode ? 'ON' : 'OFF'}</span>
-            </button>
-
-            {/* Collision Toggle */}
-            <button
-              onClick={toggleCollision}
-              className={`flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs font-medium border transition-colors col-span-2 ${
-                collisionEnabled
-                  ? 'bg-emerald-950/40 border-emerald-500/50 text-emerald-300'
-                  : 'bg-slate-900/60 border-slate-800 text-slate-400 hover:text-white'
-              }`}
-            >
-              <span className="flex items-center gap-1.5">
-                <Shield className="w-3.5 h-3.5" /> Wall & Furniture Collision
-              </span>
-              <span className="text-[10px] font-mono">{collisionEnabled ? 'ENABLED' : 'DISABLED'}</span>
-            </button>
-
-          </div>
-        )}
+        <button
+          onClick={() => setIsSettingsOpen(!isSettingsOpen)}
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-900/60 hover:bg-slate-800 text-slate-200 text-xs font-medium border border-white/10 transition-colors"
+        >
+          <SlidersHorizontal className="w-3.5 h-3.5 text-cyan-400" />
+          <span>Settings</span>
+          {isSettingsOpen ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronUp className="w-3.5 h-3.5" />}
+        </button>
       </div>
-
     </div>
   );
 };

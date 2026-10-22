@@ -2,13 +2,12 @@ import React, { useRef, useEffect } from 'react';
 import { Canvas, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
 import { useStore } from '../state/useStore';
-import { Lighting } from './Lighting';
+import { GaussianSplatScene } from './GaussianSplatScene';
 import { ProceduralEnvironment } from './ProceduralEnvironment';
-import { CustomModelLoader } from './CustomModelLoader';
 import { FloatingLabels } from './FloatingLabels';
 import { RoutePathVisualizer } from '../navigation/RoutePathVisualizer';
 import { FirstPersonControls } from '../roaming/FirstPersonControls';
-import { OrbitControlsWrapper } from '../roaming/OrbitControlsWrapper';
+import { AlignModeControls } from './AlignModeControls';
 import { useAutoWalkController } from '../navigation/autoWalk';
 
 // Internal controller running auto-walk and scene ref binding
@@ -30,46 +29,47 @@ interface Props {
 }
 
 export const SceneContainer: React.FC<Props> = ({ sceneRef }) => {
-  const cameraMode = useStore((s) => s.cameraMode);
-  const showShadows = useStore((s) => s.showShadows);
-  const performanceMode = useStore((s) => s.performanceMode);
-  const customModel = useStore((s) => s.customModel);
+  const scanConfig = useStore((s) => s.scanConfig);
+  const quality = useStore((s) => s.quality);
+  const isAlignMode = useStore((s) => s.isAlignMode);
+
+  // Pixel ratio based on quality setting
+  const dpr = quality === 'high' ? 2 : quality === 'balanced' ? 1.5 : 1;
 
   return (
-    <div className="w-full h-full absolute inset-0 bg-[#0a0d14]">
+    <div className="w-full h-full absolute inset-0 bg-[#0d1117]">
       <Canvas
-        shadows={showShadows && !performanceMode}
-        dpr={performanceMode ? 1 : [1, 2]}
+        // Spark requires antialias: false
         gl={{
-          antialias: !performanceMode,
+          antialias: false,
           powerPreference: 'high-performance',
-          toneMapping: THREE.ACESFilmicToneMapping,
-          toneMappingExposure: 1.15,
+          toneMapping: THREE.NoToneMapping,
         }}
+        dpr={dpr}
         camera={{
-          fov: 65,
-          near: 0.1,
-          far: 200,
-          position: [0, 24, 18],
+          fov: scanConfig.fov || 62,
+          near: scanConfig.near || 0.35,
+          far: 500,
+          position: [scanConfig.start?.[0] || 0, scanConfig.eyeHeight || 1.6, scanConfig.start?.[1] || 0],
         }}
       >
-        {/* Scene Bridge for hooks and GLTF exporter */}
+        {/* Scene Bridge for hooks */}
         <SceneBridge sceneRef={sceneRef} />
 
-        {/* Dynamic Studio & Room Lighting */}
-        <Lighting />
+        {/* Real Gaussian Splatting Photorealistic Scene */}
+        <GaussianSplatScene />
 
-        {/* 3D Scene Geometry: Procedural Twin or Uploaded Scan */}
-        {customModel ? <CustomModelLoader /> : <ProceduralEnvironment />}
+        {/* Navigation Proxy Layer (Invisible by default; faint wireframe when toggled) */}
+        <ProceduralEnvironment />
 
-        {/* Glowing 3D Navigation Path */}
+        {/* Thin 8cm Cyan Route Ribbon with animated chevrons */}
         <RoutePathVisualizer />
 
-        {/* Floating 3D Room & POI Badges */}
+        {/* Small Frosted 3D Labels (max 6 visible) */}
         <FloatingLabels />
 
-        {/* Camera Modes */}
-        {cameraMode === 'fps' ? <FirstPersonControls /> : <OrbitControlsWrapper />}
+        {/* Roaming Controls: First-person Walk or Align Orthographic mode */}
+        {isAlignMode ? <AlignModeControls /> : <FirstPersonControls />}
       </Canvas>
     </div>
   );

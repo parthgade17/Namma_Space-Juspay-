@@ -1,0 +1,18 @@
+{
+  "splatUrl": "/lab.spz",
+  "rotation": [-90, 0, 0],
+  "scale": 5,
+  "modelY": 1.6,
+  "eyeHeight": 1.6,
+  "start": [0, 0],
+  "startYaw": 0,
+  "bounds": {
+    "minX": -18,
+    "maxX": 18,
+    "minZ": -10,
+    "maxZ": 10
+  },
+  "speed": 1.6,
+  "near": 0.35,
+  "fov": 62
+}

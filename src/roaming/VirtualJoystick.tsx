@@ -1,14 +1,15 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useStore } from '../state/useStore';
 import { defaultNavGrid } from '../navigation/navGrid';
+import * as THREE from 'three';
 
 export const VirtualJoystick: React.FC = () => {
-  const cameraMode = useStore((s) => s.cameraMode);
   const userPosition = useStore((s) => s.userPosition);
   const setUserPosition = useStore((s) => s.setUserPosition);
   const userRotation = useStore((s) => s.userRotation);
   const setUserRotation = useStore((s) => s.setUserRotation);
-  const collisionEnabled = useStore((s) => s.collisionEnabled);
+  const scanConfig = useStore((s) => s.scanConfig);
+  const isAlignMode = useStore((s) => s.isAlignMode);
 
   const [isTouchDevice, setIsTouchDevice] = useState(false);
   const [joystickActive, setJoystickActive] = useState(false);
@@ -24,48 +25,61 @@ export const VirtualJoystick: React.FC = () => {
     setIsTouchDevice('ontouchstart' in window || navigator.maxTouchPoints > 0);
   }, []);
 
-  // Movement loop driven by joystick delta
+  // Movement loop
   useEffect(() => {
-    if (cameraMode !== 'fps') return;
+    if (isAlignMode) return;
 
     const interval = setInterval(() => {
       const { x: dx, y: dy } = currentDeltaRef.current;
-      if (Math.hypot(dx, dy) < 5) return;
+      if (Math.hypot(dx, dy) < 4) return;
 
       const normX = dx / 45;
       const normY = -dy / 45;
 
-      const speed = 0.08;
-      // Movement relative to current yaw
+      const speed = (scanConfig.speed ?? 1.6) * 0.035;
       const moveX = (normX * Math.cos(userRotation) + normY * Math.sin(userRotation)) * speed;
       const moveZ = (-normX * Math.sin(userRotation) + normY * Math.cos(userRotation)) * speed;
 
       let nextX = userPosition[0] + moveX;
       let nextZ = userPosition[2] + moveZ;
 
-      if (collisionEnabled) {
-        if (!defaultNavGrid.isWalkableWorld(nextX, userPosition[2])) nextX = userPosition[0];
-        if (!defaultNavGrid.isWalkableWorld(userPosition[0], nextZ)) nextZ = userPosition[2];
+      // Nav-layer wall collision
+      if (!defaultNavGrid.isWalkableWorld(nextX, userPosition[2])) nextX = userPosition[0];
+      if (!defaultNavGrid.isWalkableWorld(userPosition[0], nextZ)) nextZ = userPosition[2];
+
+      // Bounds clamp
+      const b = scanConfig.bounds;
+      if (b) {
+        nextX = THREE.MathUtils.clamp(
+          nextX,
+          Math.min(b.minX, b.maxX),
+          Math.max(b.minX, b.maxX)
+        );
+        nextZ = THREE.MathUtils.clamp(
+          nextZ,
+          Math.min(b.minZ, b.maxZ),
+          Math.max(b.minZ, b.maxZ)
+        );
       }
 
-      setUserPosition([nextX, 1.6, nextZ]);
-    }, 30);
+      setUserPosition([nextX, scanConfig.eyeHeight ?? 1.6, nextZ]);
+    }, 25);
 
     return () => clearInterval(interval);
-  }, [cameraMode, userPosition, userRotation, collisionEnabled, setUserPosition]);
+  }, [userPosition, userRotation, isAlignMode, scanConfig, setUserPosition]);
 
-  if (cameraMode !== 'fps' || !isTouchDevice) return null;
+  if (!isTouchDevice || isAlignMode) return null;
 
   const handleTouchStart = (e: React.TouchEvent) => {
     for (let i = 0; i < e.changedTouches.length; i++) {
       const touch = e.changedTouches[i];
-      // Left half = movement joystick
+      // Left 45% of screen = Movement joystick
       if (touch.clientX < window.innerWidth * 0.45 && moveTouchId.current === null) {
         moveTouchId.current = touch.identifier;
         setJoystickOrigin({ x: touch.clientX, y: touch.clientY });
         setJoystickActive(true);
       }
-      // Right half = look drag
+      // Right 55% of screen = Look drag
       else if (touch.clientX >= window.innerWidth * 0.45 && lookTouchId.current === null) {
         lookTouchId.current = touch.identifier;
         lastLookPos.current = { x: touch.clientX, y: touch.clientY };
@@ -89,7 +103,7 @@ export const VirtualJoystick: React.FC = () => {
       } else if (touch.identifier === lookTouchId.current) {
         const dx = touch.clientX - lastLookPos.current.x;
         lastLookPos.current = { x: touch.clientX, y: touch.clientY };
-        setUserRotation(userRotation - dx * 0.006);
+        setUserRotation(userRotation - dx * 0.005);
       }
     }
   };
@@ -110,7 +124,7 @@ export const VirtualJoystick: React.FC = () => {
 
   return (
     <div
-      className="absolute inset-0 z-20 pointer-events-auto touch-none"
+      className="absolute inset-0 z-20 pointer-events-auto touch-none select-none"
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
@@ -119,11 +133,11 @@ export const VirtualJoystick: React.FC = () => {
       {/* Visual Joystick Base & Puck */}
       {joystickActive && joystickOrigin && (
         <div
-          className="fixed w-28 h-28 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-emerald-400/40 bg-emerald-950/30 backdrop-blur-sm pointer-events-none flex items-center justify-center"
+          className="fixed w-28 h-28 -translate-x-1/2 -translate-y-1/2 rounded-full border border-cyan-400/40 bg-black/40 backdrop-blur-sm pointer-events-none flex items-center justify-center"
           style={{ left: joystickOrigin.x, top: joystickOrigin.y }}
         >
           <div
-            className="w-12 h-12 rounded-full bg-emerald-400/80 shadow-lg shadow-emerald-500/50"
+            className="w-11 h-11 rounded-full bg-cyan-400/80 shadow-lg shadow-cyan-500/50"
             style={{
               transform: `translate(${joystickDelta.x}px, ${joystickDelta.y}px)`,
             }}
@@ -131,9 +145,9 @@ export const VirtualJoystick: React.FC = () => {
         </div>
       )}
 
-      {/* Subtle guide on right side */}
-      <div className="absolute right-4 bottom-24 pointer-events-none text-slate-500 text-xs px-3 py-1 rounded bg-slate-900/40">
-        Drag right screen to look
+      {/* Guide on right */}
+      <div className="absolute right-4 bottom-24 pointer-events-none text-slate-400 text-[10px] px-2.5 py-1 rounded-full bg-black/50 border border-white/5">
+        Drag right half to look
       </div>
     </div>
   );

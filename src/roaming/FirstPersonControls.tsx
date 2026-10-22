@@ -8,26 +8,52 @@ import { generateTurnDirections } from '../navigation/turnByTurn';
 
 export const FirstPersonControls: React.FC = () => {
   const { camera, gl } = useThree();
-  const cameraMode = useStore((s) => s.cameraMode);
   const userPosition = useStore((s) => s.userPosition);
   const setUserPosition = useStore((s) => s.setUserPosition);
   const setUserRotation = useStore((s) => s.setUserRotation);
-  const collisionEnabled = useStore((s) => s.collisionEnabled);
   const isAutoWalking = useStore((s) => s.isAutoWalking);
   const activePath = useStore((s) => s.activePath);
   const activeDestination = useStore((s) => s.activeDestination);
   const setNavigationRoute = useStore((s) => s.setNavigationRoute);
+  const scanConfig = useStore((s) => s.scanConfig);
+  const isAlignMode = useStore((s) => s.isAlignMode);
+  const toggleCalibration = useStore((s) => s.toggleCalibration);
 
   const keysPressed = useRef<{ [key: string]: boolean }>({});
   const isLockedRef = useRef(false);
-  const euler = useRef(new THREE.Euler(0, 0, 0, 'YXZ'));
 
-  // Pointer Lock setup
+  // Target and current yaw/pitch for smooth damped mouse look
+  const currentEuler = useRef(new THREE.Euler(0, 0, 0, 'YXZ'));
+  const targetEuler = useRef(new THREE.Euler(0, 0, 0, 'YXZ'));
+
+  // Velocity vector for smooth acceleration / deceleration
+  const velocity = useRef(new THREE.Vector3());
+
+  // Reset camera to initial config position
+  const resetCamera = () => {
+    const startX = scanConfig.start?.[0] ?? 0;
+    const startZ = scanConfig.start?.[1] ?? 0;
+    const eyeH = scanConfig.eyeHeight ?? 1.6;
+    const yaw = THREE.MathUtils.degToRad(scanConfig.startYaw ?? 0);
+
+    camera.position.set(startX, eyeH, startZ);
+    targetEuler.current.set(0, yaw, 0, 'YXZ');
+    currentEuler.current.set(0, yaw, 0, 'YXZ');
+    camera.quaternion.setFromEuler(currentEuler.current);
+    setUserPosition([startX, eyeH, startZ]);
+    setUserRotation(yaw);
+  };
+
   useEffect(() => {
-    if (cameraMode !== 'fps') return;
+    resetCamera();
+  }, [scanConfig.start, scanConfig.eyeHeight, scanConfig.startYaw]);
 
-    const onPointerDown = () => {
-      if (!isLockedRef.current && !isAutoWalking) {
+  // Pointer Lock and Key listeners
+  useEffect(() => {
+    if (isAlignMode) return;
+
+    const onPointerDown = (e: MouseEvent) => {
+      if (e.button === 0 && !isLockedRef.current && !isAutoWalking) {
         gl.domElement.requestPointerLock?.();
       }
     };
@@ -42,19 +68,25 @@ export const FirstPersonControls: React.FC = () => {
       const movementX = event.movementX || 0;
       const movementY = event.movementY || 0;
 
-      euler.current.setFromQuaternion(camera.quaternion);
-      euler.current.y -= movementX * 0.0022;
-      euler.current.x -= movementY * 0.0022;
+      targetEuler.current.y -= movementX * 0.0022;
+      targetEuler.current.x -= movementY * 0.0022;
 
-      // Clamp vertical look angle
-      euler.current.x = Math.max(-Math.PI / 2.3, Math.min(Math.PI / 2.3, euler.current.x));
-      camera.quaternion.setFromEuler(euler.current);
-
-      setUserRotation(euler.current.y);
+      // Clamp pitch between -85 and +85 degrees
+      targetEuler.current.x = THREE.MathUtils.clamp(
+        targetEuler.current.x,
+        -Math.PI / 2.1,
+        Math.PI / 2.1
+      );
     };
 
     const onKeyDown = (e: KeyboardEvent) => {
       keysPressed.current[e.code] = true;
+      if (e.code === 'KeyT' && !e.repeat) {
+        toggleCalibration();
+      }
+      if (e.code === 'KeyR' && !e.repeat) {
+        resetCamera();
+      }
     };
 
     const onKeyUp = (e: KeyboardEvent) => {
@@ -78,16 +110,15 @@ export const FirstPersonControls: React.FC = () => {
         document.exitPointerLock?.();
       }
     };
-  }, [cameraMode, isAutoWalking, camera, gl, setUserRotation]);
+  }, [isAlignMode, isAutoWalking, gl, toggleCalibration]);
 
-  // Recalculate route if user goes off-path by > 1.8 meters
+  // Off-path dynamic re-routing check
   const lastRerouteTime = useRef(0);
   const checkOffPath = (curX: number, curZ: number) => {
     if (activePath.length < 2 || !activeDestination || isAutoWalking) return;
     const now = Date.now();
-    if (now - lastRerouteTime.current < 2000) return; // Debounce 2s
+    if (now - lastRerouteTime.current < 2000) return;
 
-    // Find distance to closest path segment
     let minDist = Infinity;
     for (const pt of activePath) {
       const d = Math.hypot(curX - pt[0], curZ - pt[2]);
@@ -96,24 +127,39 @@ export const FirstPersonControls: React.FC = () => {
 
     if (minDist > 1.8) {
       lastRerouteTime.current = now;
-      const newPath = findPath(curX, curZ, activeDestination.position[0], activeDestination.position[2]);
+      const newPath = findPath(
+        curX,
+        curZ,
+        activeDestination.position[0],
+        activeDestination.position[2]
+      );
       if (newPath.length >= 2) {
-        const { directions, totalDistance } = generateTurnDirections(newPath, activeDestination);
+        const { directions, totalDistance } = generateTurnDirections(
+          newPath,
+          activeDestination
+        );
         setNavigationRoute(newPath, directions, totalDistance);
       }
     }
   };
 
   useFrame((_, delta) => {
-    if (cameraMode !== 'fps') return;
+    if (isAlignMode) return;
+
+    // Apply slight mouse-look damping
+    const damp = Math.min(1.0, delta * 24);
+    currentEuler.current.x += (targetEuler.current.x - currentEuler.current.x) * damp;
+    currentEuler.current.y += (targetEuler.current.y - currentEuler.current.y) * damp;
+    camera.quaternion.setFromEuler(currentEuler.current);
+    setUserRotation(currentEuler.current.y);
 
     // In auto-walk, position is driven by useAutoWalkController
     if (isAutoWalking) {
-      camera.position.set(userPosition[0], 1.6, userPosition[2]);
+      camera.position.set(userPosition[0], scanConfig.eyeHeight ?? 1.6, userPosition[2]);
       return;
     }
 
-    // WASD movement
+    // WASD movement inputs
     let moveForward = 0;
     let moveRight = 0;
 
@@ -123,46 +169,65 @@ export const FirstPersonControls: React.FC = () => {
     if (keys['KeyA'] || keys['ArrowLeft']) moveRight -= 1;
     if (keys['KeyD'] || keys['ArrowRight']) moveRight += 1;
 
-    if (moveForward === 0 && moveRight === 0) {
-      camera.position.set(userPosition[0], 1.6, userPosition[2]);
+    // Target velocity relative to camera yaw
+    const forward = new THREE.Vector3(0, 0, -1)
+      .applyAxisAngle(new THREE.Vector3(0, 1, 0), currentEuler.current.y);
+    const right = new THREE.Vector3(1, 0, 0)
+      .applyAxisAngle(new THREE.Vector3(0, 1, 0), currentEuler.current.y);
+
+    const inputDir = new THREE.Vector3()
+      .addScaledVector(forward, moveForward)
+      .addScaledVector(right, moveRight)
+      .normalize();
+
+    const maxSpeed = (scanConfig.speed ?? 1.6) * (keys['ShiftLeft'] || keys['ShiftRight'] ? 2.2 : 1.0);
+    const targetVel = inputDir.multiplyScalar(maxSpeed);
+
+    // Smooth acceleration / deceleration
+    const accelRate = Math.min(1.0, delta * 12);
+    velocity.current.lerp(targetVel, accelRate);
+
+    if (velocity.current.lengthSq() < 0.0001) {
+      camera.position.y = scanConfig.eyeHeight ?? 1.6;
       return;
     }
 
-    // Speed: 3.5 m/s normal, 5.5 m/s with Shift
-    const speed = (keys['ShiftLeft'] || keys['ShiftRight'] ? 5.5 : 3.5) * delta;
+    const moveStep = velocity.current.clone().multiplyScalar(delta);
 
-    // Movement relative to camera yaw
-    const forward = new THREE.Vector3(0, 0, -1).applyAxisAngle(new THREE.Vector3(0, 1, 0), euler.current.y);
-    const right = new THREE.Vector3(1, 0, 0).applyAxisAngle(new THREE.Vector3(0, 1, 0), euler.current.y);
+    let nextX = userPosition[0] + moveStep.x;
+    let nextZ = userPosition[2] + moveStep.z;
 
-    const moveVector = new THREE.Vector3()
-      .addScaledVector(forward, moveForward)
-      .addScaledVector(right, moveRight)
-      .normalize()
-      .multiplyScalar(speed);
-
-    let nextX = userPosition[0] + moveVector.x;
-    let nextZ = userPosition[2] + moveVector.z;
-
-    // Collision detection against walls and furniture
-    if (collisionEnabled) {
-      // Test X movement separately for smooth wall sliding
-      if (!defaultNavGrid.isWalkableWorld(nextX, userPosition[2])) {
-        nextX = userPosition[0];
-      }
-      // Test Z movement
-      if (!defaultNavGrid.isWalkableWorld(userPosition[0], nextZ)) {
-        nextZ = userPosition[2];
-      }
-      // Diagonal corner check
-      if (!defaultNavGrid.isWalkableWorld(nextX, nextZ)) {
-        nextX = userPosition[0];
-        nextZ = userPosition[2];
-      }
+    // Nav-layer Wall Collision Check (prevent passing through walls)
+    if (!defaultNavGrid.isWalkableWorld(nextX, userPosition[2])) {
+      nextX = userPosition[0];
+    }
+    if (!defaultNavGrid.isWalkableWorld(userPosition[0], nextZ)) {
+      nextZ = userPosition[2];
+    }
+    if (!defaultNavGrid.isWalkableWorld(nextX, nextZ)) {
+      nextX = userPosition[0];
+      nextZ = userPosition[2];
     }
 
-    setUserPosition([nextX, 1.6, nextZ]);
-    camera.position.set(nextX, 1.6, nextZ);
+    // Bounds clamp from scanConfig
+    const b = scanConfig.bounds;
+    if (b) {
+      nextX = THREE.MathUtils.clamp(
+        nextX,
+        Math.min(b.minX, b.maxX),
+        Math.max(b.minX, b.maxX)
+      );
+      nextZ = THREE.MathUtils.clamp(
+        nextZ,
+        Math.min(b.minZ, b.maxZ),
+        Math.max(b.minZ, b.maxZ)
+      );
+    }
+
+    // Eye-height lock (no head-bob)
+    const eyeH = scanConfig.eyeHeight ?? 1.6;
+    camera.position.set(nextX, eyeH, nextZ);
+    setUserPosition([nextX, eyeH, nextZ]);
 
     checkOffPath(nextX, nextZ);
   });

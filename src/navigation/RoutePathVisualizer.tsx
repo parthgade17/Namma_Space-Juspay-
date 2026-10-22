@@ -6,149 +6,134 @@ import { useStore } from '../state/useStore';
 export const RoutePathVisualizer: React.FC = () => {
   const activePath = useStore((s) => s.activePath);
   const isEmergency = useStore((s) => s.isEmergency);
-  const activeDestination = useStore((s) => s.activeDestination);
 
-  const lineMatRef = useRef<THREE.LineDashedMaterial>(null);
-  const beaconRingRef = useRef<THREE.Mesh>(null);
-  const beaconCoreRef = useRef<THREE.Mesh>(null);
+  const dashMatRef = useRef<THREE.LineDashedMaterial>(null);
+  const targetRingRef = useRef<THREE.Mesh>(null);
 
-  // Generate smooth curve and points from activePath
-  const { lineGeometry, curvePoints, chevronTransforms } = useMemo(() => {
+  // Generate 8cm thin ribbon and chevron transforms
+  const { lineGeometry, chevronTransforms, destPoint } = useMemo(() => {
     if (activePath.length < 2) {
-      return { lineGeometry: null, curvePoints: [], chevronTransforms: [] };
+      return { lineGeometry: null, chevronTransforms: [], destPoint: null };
     }
 
-    const vectors = activePath.map((p) => new THREE.Vector3(p[0], 0.08, p[2]));
-    // CatmullRom curve for silky smooth visual interpolation
-    const curve = new THREE.CatmullRomCurve3(vectors, false, 'centripetal', 0.2);
-    const divisions = Math.max(50, activePath.length * 20);
+    // Elevation: exactly 2 cm (0.02m) above floor
+    const vectors = activePath.map((p) => new THREE.Vector3(p[0], 0.02, p[2]));
+    const curve = new THREE.CatmullRomCurve3(vectors, false, 'centripetal', 0.15);
+    const divisions = Math.max(40, activePath.length * 15);
     const sampled = curve.getPoints(divisions);
 
     const geom = new THREE.BufferGeometry().setFromPoints(sampled);
 
-    // Compute line distances for dashed material animation
-    const lineGeom = geom;
+    // Compute line distances for soft dashed animated flow
     const distances = [0];
     for (let i = 1; i < sampled.length; i++) {
       distances.push(distances[i - 1] + sampled[i].distanceTo(sampled[i - 1]));
     }
-    lineGeom.setAttribute('lineDistance', new THREE.Float32BufferAttribute(distances, 1));
+    geom.setAttribute('lineDistance', new THREE.Float32BufferAttribute(distances, 1));
 
-    // Place directional chevron arrows along the curve every 1.5m
+    // Direction chevrons every 1.8m
     const totalDist = distances[distances.length - 1];
-    const chevronCount = Math.floor(totalDist / 1.5);
+    const count = Math.floor(totalDist / 1.8);
     const transforms: { pos: [number, number, number]; rot: number }[] = [];
 
-    for (let i = 1; i <= chevronCount; i++) {
-      const u = (i * 1.5) / totalDist;
-      if (u < 0.98) {
+    for (let i = 1; i <= count; i++) {
+      const u = (i * 1.8) / totalDist;
+      if (u < 0.96) {
         const pt = curve.getPointAt(u);
         const tangent = curve.getTangentAt(u);
         const angle = Math.atan2(tangent.x, tangent.z);
         transforms.push({
-          pos: [pt.x, 0.09, pt.z],
+          pos: [pt.x, 0.025, pt.z],
           rot: angle,
         });
       }
     }
 
-    return { lineGeometry: lineGeom, curvePoints: sampled, chevronTransforms: transforms };
+    return {
+      lineGeometry: geom,
+      chevronTransforms: transforms,
+      destPoint: activePath[activePath.length - 1],
+    };
   }, [activePath]);
 
-  // Animate pulse & dashed texture
+  // Subtle animations
   useFrame((_, delta) => {
-    if (lineMatRef.current) {
-      lineMatRef.current.dashOffset -= delta * 3.5;
+    if (dashMatRef.current) {
+      (dashMatRef.current as any).dashOffset -= delta * 2.0;
     }
-    if (beaconRingRef.current) {
-      beaconRingRef.current.rotation.z += delta * 1.5;
-      const s = 1 + Math.sin(Date.now() * 0.005) * 0.2;
-      beaconRingRef.current.scale.set(s, s, s);
-    }
-    if (beaconCoreRef.current) {
-      beaconCoreRef.current.position.y = 0.5 + Math.sin(Date.now() * 0.006) * 0.2;
+    if (targetRingRef.current) {
+      const s = 1 + Math.sin(Date.now() * 0.004) * 0.12;
+      targetRingRef.current.scale.set(s, s, s);
     }
   });
 
   if (!lineGeometry || activePath.length < 2) return null;
 
-  const pathColor = isEmergency ? '#ef4444' : '#10b981';
-  const glowColor = isEmergency ? '#dc2626' : '#06b6d4';
-
-  const destPoint = activePath[activePath.length - 1];
+  const cyanColor = isEmergency ? '#ef4444' : '#22d3ee'; // Cyan #22d3ee accent
 
   return (
     <group>
-      {/* 1. Base Glow Ribbon under the line */}
+      {/* 1. Thin (8 cm) translucent cyan ribbon 2 cm above floor */}
       <mesh position={[0, 0.02, 0]}>
-        <tubeGeometry args={[
-          new THREE.CatmullRomCurve3(activePath.map(p => new THREE.Vector3(p[0], 0.04, p[2]))),
-          64,
-          0.12,
-          8,
-          false
-        ]} />
+        <tubeGeometry
+          args={[
+            new THREE.CatmullRomCurve3(
+              activePath.map((p) => new THREE.Vector3(p[0], 0.02, p[2]))
+            ),
+            Math.max(32, activePath.length * 10),
+            0.04, // 8cm diameter tube / thin flat ribbon
+            6,
+            false,
+          ]}
+        />
         <meshBasicMaterial
-          color={glowColor}
+          color={cyanColor}
           transparent
-          opacity={0.45}
+          opacity={0.55}
           depthWrite={false}
         />
       </mesh>
 
-      {/* 2. Primary Animated Dashed Line */}
+      {/* 2. Soft animated dashed centerline */}
       {/* @ts-expect-error Three R3F line */}
       <line geometry={lineGeometry}>
         <lineDashedMaterial
-          ref={lineMatRef}
-          color={pathColor}
-          dashSize={0.6}
-          gapSize={0.3}
-          linewidth={4}
+          ref={dashMatRef}
+          color={cyanColor}
+          dashSize={0.4}
+          gapSize={0.2}
+          linewidth={2}
           transparent
-          opacity={0.95}
+          opacity={0.85}
         />
       </line>
 
-      {/* 3. Direction Arrows / Chevrons */}
+      {/* 3. Soft animated chevron arrows */}
       {chevronTransforms.map((t, idx) => (
         <group key={idx} position={t.pos} rotation={[-Math.PI / 2, 0, -t.rot]}>
-          {/* Chevron triangle */}
           <mesh rotation={[0, 0, Math.PI]}>
-            <coneGeometry args={[0.2, 0.35, 3]} />
-            <meshBasicMaterial color={pathColor} transparent opacity={0.85} />
+            <coneGeometry args={[0.08, 0.16, 3]} />
+            <meshBasicMaterial color={cyanColor} transparent opacity={0.7} />
           </mesh>
         </group>
       ))}
 
-      {/* 4. Target Destination Pulsing Beacon */}
+      {/* 4. Destination = small ring on the floor (NO big glowing spheres) */}
       {destPoint && (
-        <group position={[destPoint[0], 0, destPoint[2]]}>
-          {/* Expanding target ring */}
-          <mesh ref={beaconRingRef} position={[0, 0.08, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-            <ringGeometry args={[0.4, 0.65, 32]} />
-            <meshBasicMaterial color={pathColor} side={THREE.DoubleSide} transparent opacity={0.7} />
-          </mesh>
-
-          {/* Vertical beacon column */}
-          <mesh position={[0, 1.2, 0]}>
-            <cylinderGeometry args={[0.04, 0.1, 2.4, 16]} />
-            <meshBasicMaterial color={pathColor} transparent opacity={0.5} />
-          </mesh>
-
-          {/* Floating diamond at top */}
-          <mesh ref={beaconCoreRef} position={[0, 2.2, 0]} rotation={[0.4, 0.4, 0]}>
-            <octahedronGeometry args={[0.25, 0]} />
-            <meshStandardMaterial
-              color={pathColor}
-              emissive={pathColor}
-              emissiveIntensity={0.8}
-              roughness={0.2}
+        <group position={[destPoint[0], 0.025, destPoint[2]]}>
+          <mesh ref={targetRingRef} rotation={[-Math.PI / 2, 0, 0]}>
+            <ringGeometry args={[0.22, 0.32, 32]} />
+            <meshBasicMaterial
+              color={cyanColor}
+              side={THREE.DoubleSide}
+              transparent
+              opacity={0.8}
             />
           </mesh>
-
-          {/* Floor spot illumination */}
-          <pointLight color={pathColor} intensity={2.5} distance={3} position={[0, 0.5, 0]} />
+          <mesh rotation={[-Math.PI / 2, 0, 0]}>
+            <circleGeometry args={[0.08, 16]} />
+            <meshBasicMaterial color={cyanColor} side={THREE.DoubleSide} transparent opacity={0.9} />
+          </mesh>
         </group>
       )}
     </group>
