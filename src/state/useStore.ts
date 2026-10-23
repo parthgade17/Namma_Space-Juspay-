@@ -35,14 +35,16 @@ export interface ScanConfig {
 export interface FloorPlanTransform {
   x: number;
   z: number;
-  rotation: number; // in radians
+  rotation: number;
   scale: number;
 }
 
 interface AppState {
   // App views
   currentMode: 'roam' | 'pipeline';
-  
+  viewMode: 'mesh' | 'splat'; // 'mesh' = 3D Model (default), 'splat' = Real Scan
+  isTopDownView: boolean; // Top-down architectural plan view for mesh only
+
   // Scan Configuration & Loading
   scanConfig: ScanConfig;
   splatLoading: {
@@ -50,11 +52,11 @@ interface AppState {
     isLoaded: boolean;
     error: string | null;
   };
-  
+
   // User state in 3D
   userPosition: [number, number, number];
-  userRotation: number; // yaw in radians
-  
+  userRotation: number;
+
   // Navigation
   activeDestination: POI | null;
   activePath: [number, number, number][];
@@ -64,9 +66,8 @@ interface AppState {
   isAutoWalking: boolean;
   isEmergency: boolean;
 
-  // Real Scan / Nav Layer Visibility
-  showNavLayer: boolean; // default false
-  isAlignMode: boolean; // Floor plan alignment orthographic mode
+  // Alignment Mode & Dynamic Plan
+  isAlignMode: boolean;
   floorPlanTransform: FloorPlanTransform;
   dynamicFloorPlan: typeof floorPlanData;
 
@@ -82,6 +83,9 @@ interface AppState {
 
   // Actions
   setCurrentMode: (mode: 'roam' | 'pipeline') => void;
+  setViewMode: (v: 'mesh' | 'splat') => void;
+  setIsTopDownView: (topDown: boolean) => void;
+  toggleTopDownView: () => void;
   setScanConfig: (cfg: Partial<ScanConfig>) => void;
   setSplatLoading: (loading: Partial<AppState['splatLoading']>) => void;
   setUserPosition: (pos: [number, number, number]) => void;
@@ -92,8 +96,7 @@ interface AppState {
   setIsAutoWalking: (val: boolean) => void;
   triggerEmergencyMode: () => void;
   resetEmergencyMode: () => void;
-  
-  toggleNavLayer: () => void;
+
   toggleAlignMode: () => void;
   setFloorPlanTransform: (transform: Partial<FloorPlanTransform>) => void;
   setDynamicFloorPlan: (data: typeof floorPlanData) => void;
@@ -112,17 +115,19 @@ const DEFAULT_CONFIG: ScanConfig = {
   scale: 5,
   modelY: 1.6,
   eyeHeight: 1.6,
-  start: [0, 0],
-  startYaw: 0,
-  bounds: { minX: -18, maxX: 18, minZ: -10, maxZ: 10 },
+  start: [-4.0, 0], // Start inside the central corridor near workshop & entrance
+  startYaw: 90,     // Facing down the corridor
+  bounds: { minX: -9.5, maxX: 8.5, minZ: -5.8, maxZ: 5.5 },
   speed: 1.6,
-  near: 0.35,
-  fov: 62,
+  near: 0.25,
+  fov: 65,
 };
 
 export const useStore = create<AppState>((set) => ({
   currentMode: 'roam',
-  
+  viewMode: 'mesh', // "3D Model" is the DEFAULT as requested!
+  isTopDownView: false,
+
   scanConfig: DEFAULT_CONFIG,
   splatLoading: {
     progress: 0,
@@ -141,13 +146,12 @@ export const useStore = create<AppState>((set) => ({
   isAutoWalking: false,
   isEmergency: false,
 
-  showNavLayer: false, // INVISIBLE by default
   isAlignMode: false,
   floorPlanTransform: { x: 0, z: 0, rotation: 0, scale: 1 },
   dynamicFloorPlan: floorPlanData,
 
   showLabels: true,
-  quality: 'balanced',
+  quality: 'high',
   isCalibrationOpen: false,
   isSettingsOpen: false,
 
@@ -155,6 +159,9 @@ export const useStore = create<AppState>((set) => ({
   fps: 60,
 
   setCurrentMode: (mode) => set({ currentMode: mode }),
+  setViewMode: (v) => set({ viewMode: v }),
+  setIsTopDownView: (topDown) => set({ isTopDownView: topDown }),
+  toggleTopDownView: () => set((s) => ({ isTopDownView: !s.isTopDownView })),
   setScanConfig: (cfg) => set((s) => ({ scanConfig: { ...s.scanConfig, ...cfg } })),
   setSplatLoading: (loading) => set((s) => ({ splatLoading: { ...s.splatLoading, ...loading } })),
   setUserPosition: (pos) => set({ userPosition: pos }),
@@ -179,7 +186,6 @@ export const useStore = create<AppState>((set) => ({
   triggerEmergencyMode: () => set({ isEmergency: true }),
   resetEmergencyMode: () => set({ isEmergency: false }),
 
-  toggleNavLayer: () => set((s) => ({ showNavLayer: !s.showNavLayer })),
   toggleAlignMode: () => set((s) => ({ isAlignMode: !s.isAlignMode })),
   setFloorPlanTransform: (t) => set((s) => ({ floorPlanTransform: { ...s.floorPlanTransform, ...t } })),
   setDynamicFloorPlan: (data) => set({ dynamicFloorPlan: data }),

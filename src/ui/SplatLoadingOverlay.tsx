@@ -1,10 +1,14 @@
 import React, { useState } from 'react';
 import { useStore } from '../state/useStore';
-import { Sparkles, AlertCircle, ArrowRight, CheckCircle2 } from 'lucide-react';
+import { Sparkles, AlertCircle, ArrowRight } from 'lucide-react';
 
 export const SplatLoadingOverlay: React.FC = () => {
   const splatLoading = useStore((s) => s.splatLoading);
+  const viewMode = useStore((s) => s.viewMode);
   const [hasStartedWalking, setHasStartedWalking] = useState(false);
+
+  // If in 'mesh' mode (default 3D Model), don't block the screen!
+  if (viewMode !== 'splat') return null;
 
   if (hasStartedWalking && splatLoading.isLoaded) return null;
 
@@ -21,7 +25,7 @@ export const SplatLoadingOverlay: React.FC = () => {
           Raasta <span className="text-cyan-400">3D</span>
         </h1>
         <p className="text-xs text-slate-400 mt-1">
-          Real Gaussian Radiance Field Twin (968,065 Splats)
+          Loading Real Gaussian Splat (968,065 Gaussians)
         </p>
 
         {/* Progress or Error */}
@@ -64,7 +68,7 @@ export const SplatLoadingOverlay: React.FC = () => {
         >
           {splatLoading.isLoaded ? (
             <>
-              Click to Walk Inside Lab
+              Click to Walk in Real Scan
               <ArrowRight className="w-4 h-4" />
             </>
           ) : (

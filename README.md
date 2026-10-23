@@ -1,20 +1,45 @@
-# Raasta 3D — Photorealistic 3D Digital Twin & Autonomous Navigation
+# Raasta 3D — Architectural Digital Twin & Autonomous Indoor Navigation
 
 > **Techfest, IIT Bombay — Namma Space Competition**  
-> An interactive spatial engine converting standard smartphone video captures of indoor spaces into a photorealistic 3D Gaussian Radiance Field digital twin, featuring real-time collision detection, semantic search, and A* obstacle-aware navigation.
+> An interactive spatial digital twin and indoor navigation engine for the innovation lab. Features a clean architectural 3D mesh twin (default view) modeled from ground-truth photo references, alongside a real 3D Gaussian Radiance Field scan (`.spz`), real-time collision detection, semantic search, and A* obstacle-aware navigation.
 
 ---
 
-## 📸 Photorealistic Gaussian Splatting Architecture
+## 🏛️ Dual-Engine Spatial Architecture
 
-Unlike synthetic or procedural mesh representations, **Raasta 3D** loads and renders a **real 3D Gaussian Splatting scan (`public/lab.spz`)** containing **968,065 Gaussians** trained with Nerfstudio's `splatfacto` model from an actual smartphone video walk of the computer lab.
+Raasta 3D offers two complementary spatial visualizations toggleable in real-time from the top bar:
 
-### Key Architectural Highlights
-1. **Photoreal Gaussian Splat Viewer**: Built using `@sparkjsdev/spark 2.4.0` and `three.js >= 0.180`, leveraging WebGL compute and sorting shaders (`antialias: false`, tonemapping aligned with splat radiance values).
-2. **First-Person Eye-Height Lock**: Default walking experience starts inside the lab at eye height (1.6m), with realistic near-clipping (0.35m) and field-of-view (62°) derived from `scanConfig.json`.
-3. **Aligned Navigation Proxy**: Procedural geometry from `floorplan.json` acts as an invisible collision & pathfinding proxy (`showNavLayer` toggles a faint 20% white wireframe labeled *"Navigation layer (floor-plan proxy)"*).
-4. **Interactive Plan Alignment Mode**: Top-down orthographic view allowing fine translation, rotation, and scaling of the floor plan against the Gaussian splat, with a one-click **"Copy JSON"** button.
-5. **Real-time Calibration (Key `T`)**: Hidden in-app calibration drawer with sliders for model rotation, scale, elevation, eye height, bounds clamping, and near/FOV adjustments.
+### 1. 3D Model (Default View — Architectural Digital Twin)
+- **Design Philosophy**: A clean, architectural mesh representation of the actual lab built with Three.js, matching the 15 walking-order reference photos (`reference/lab_photos/`).
+- **Materials & Aesthetics**:
+  - **Partitions**: 5 cm black powder-coated aluminium frames with 1 m lower cream laminate panels and 2.4 m upper clear/frosted glass panels.
+  - **Flooring**: Vitrified 600×600 mm grey ceramic floor tiles with subtle grout bump mapping and reflective clearcoat.
+  - **Lighting**: 6000K cool-white recessed LED panel light fixtures in the ceiling (visible in first-person walking mode, automatically unclipped in top-down plan view).
+  - **True Lab Spaces**:
+    - **Entrance**: Wooden door, facial recognition kiosk tablet on stand, visitor QR poster.
+    - **Mechanical Workshop**: Heavy wooden workbenches, blue pegboard tool wall with hanging tools, 4 yellow safety posters, drill press, metal chop saw, A-frame stepladder, grey workshop chairs.
+    - **Electronics Bench**: Long wall bench with industrial power socket conduit bar, digital oscilloscope, dual-channel DC power supply, laptops, red CO2 fire extinguisher, window security grills.
+    - **3D Printing Area**: Two enclosed CoreXY 3D printers with spool holders and a dedicated slice workstation.
+    - **Laser Cutter Cabin**: Enclosed cabin with industrial blue/grey CO2 laser cutter machine, control console, and black mesh chair.
+    - **Study Area**: Long wall study desk, black mesh task chairs, and white power conduits.
+    - **Meeting Room**: Wall-mounted TV screen displaying an active IoT analytics dashboard, conference table, and seating.
+    - **Storage Area**: Cardboard sheets, material stock boxes, and equipment shelving.
+- **Performance**: High fidelity with < 40,000 polygons, maintaining steady 60 FPS on laptops.
+
+### 2. Real Scan (Gaussian Radiance Field — `public/lab.spz`)
+- **Technology**: Real 3D Gaussian Splatting scan (`968,065 Gaussians`) trained with Nerfstudio's `splatfacto` from a continuous smartphone video walk.
+- **Rendering**: Realized via `@sparkjsdev/spark 2.4.0` with WebGL compute shaders, custom camera calibration (`scanConfig.json`), and bounds clamping.
+
+### 3. Plan Alignment Mode ("Align Plan")
+- Displays both the **Real Scan** and the **3D Model** (rendered at 50% opacity) in an orthographic top-down viewport with interactive translation, rotation, and scale handles, alongside a one-click **"Copy JSON"** button to persist alignment parameters.
+
+---
+
+## 🔬 Honest Reconstruction Pipeline & Attribution
+
+Raasta 3D maintains strict technical honesty across all UI screens:
+- **"Real Scan"**: A genuine neural radiance capture processed from handheld smartphone video through COLMAP Structure from Motion (SfM) and Nerfstudio Gaussian Splatting (`splatfacto`).
+- **"3D Model"**: A clean architectural digital twin modeled to sub-decimeter accuracy matching reference photos and aligned to the real scan coordinate system. It is never misrepresented as an automatic surface mesh reconstruction.
 
 ---
 

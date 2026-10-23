@@ -3,18 +3,16 @@ import { useStore } from '../state/useStore';
 import {
   Activity,
   SlidersHorizontal,
-  Layers,
   Tag,
   Maximize2,
   Sliders,
-  Check,
+  Map,
   ChevronDown,
   ChevronUp,
 } from 'lucide-react';
 
 export const ControlsOverlay: React.FC = () => {
-  const showNavLayer = useStore((s) => s.showNavLayer);
-  const toggleNavLayer = useStore((s) => s.toggleNavLayer);
+  const viewMode = useStore((s) => s.viewMode);
   const showLabels = useStore((s) => s.showLabels);
   const setShowLabels = useStore((s) => s.setShowLabels);
   const quality = useStore((s) => s.quality);
@@ -23,6 +21,8 @@ export const ControlsOverlay: React.FC = () => {
   const toggleCalibration = useStore((s) => s.toggleCalibration);
   const isAlignMode = useStore((s) => s.isAlignMode);
   const toggleAlignMode = useStore((s) => s.toggleAlignMode);
+  const isTopDownView = useStore((s) => s.isTopDownView);
+  const toggleTopDownView = useStore((s) => s.toggleTopDownView);
   const fps = useStore((s) => s.fps);
   const setFps = useStore((s) => s.setFps);
 
@@ -88,26 +88,23 @@ export const ControlsOverlay: React.FC = () => {
               </div>
             </div>
 
-            {/* Nav Layer Toggle */}
             <div className="pt-2 border-t border-white/10 space-y-2">
-              <button
-                onClick={toggleNavLayer}
-                className={`w-full flex items-center justify-between px-3 py-2 rounded-xl border text-xs font-medium transition-all ${
-                  showNavLayer
-                    ? 'bg-cyan-950/40 border-cyan-500/50 text-cyan-300'
-                    : 'bg-slate-900/40 border-white/5 text-slate-400 hover:text-white'
-                }`}
-              >
-                <span className="flex items-center gap-2">
-                  <Layers className="w-3.5 h-3.5" />
-                  Show Nav Layer
-                </span>
-                <span className="text-[10px] font-mono">{showNavLayer ? 'ON' : 'OFF'}</span>
-              </button>
-              {showNavLayer && (
-                <div className="text-[10px] text-cyan-400/80 px-1 font-mono">
-                  Navigation layer (floor-plan proxy)
-                </div>
+              {/* Plan View Toggle (for 3D mesh model) */}
+              {viewMode === 'mesh' && (
+                <button
+                  onClick={toggleTopDownView}
+                  className={`w-full flex items-center justify-between px-3 py-2 rounded-xl border text-xs font-medium transition-all ${
+                    isTopDownView
+                      ? 'bg-cyan-950/40 border-cyan-500/50 text-cyan-300'
+                      : 'bg-slate-900/40 border-white/5 text-slate-400 hover:text-white'
+                  }`}
+                >
+                  <span className="flex items-center gap-2">
+                    <Map className="w-3.5 h-3.5" />
+                    Top-Down Plan View
+                  </span>
+                  <span className="text-[10px] font-mono">{isTopDownView ? 'ON' : 'OFF'}</span>
+                </button>
               )}
 
               {/* Labels Toggle */}
@@ -137,9 +134,9 @@ export const ControlsOverlay: React.FC = () => {
               >
                 <span className="flex items-center gap-2">
                   <Sliders className="w-3.5 h-3.5" />
-                  Align Floor Plan
+                  Align Model with Scan
                 </span>
-                <span className="text-[10px] font-mono">{isAlignMode ? 'ACTIVE' : 'START'}</span>
+                <span className="text-[10px] font-mono">{isAlignMode ? 'ACTIVE' : 'ALIGN'}</span>
               </button>
 
               {/* Calibration Panel Toggle (Key T) */}
@@ -153,7 +150,7 @@ export const ControlsOverlay: React.FC = () => {
               >
                 <span className="flex items-center gap-2">
                   <Maximize2 className="w-3.5 h-3.5" />
-                  Splat Calibration (Key T)
+                  Scan Calibration (Key T)
                 </span>
                 <span className="text-[10px] font-mono">{isCalibrationOpen ? 'OPEN' : 'T'}</span>
               </button>
@@ -163,7 +160,7 @@ export const ControlsOverlay: React.FC = () => {
       )}
 
       {/* Persistent Bottom Bar: FPS + Settings Popover Button */}
-      <div className="flex items-center gap-2 p-1.5 rounded-2xl bg-[rgba(15,17,20,0.6)] backdrop-blur-md border border-white/10 shadow-xl">
+      <div className="flex items-center gap-2 p-1.5 rounded-2xl bg-[rgba(15,17,20,0.7)] backdrop-blur-md border border-white/10 shadow-xl">
         <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-black/40 border border-white/5 text-[11px] font-mono text-cyan-400">
           <Activity className="w-3.5 h-3.5" />
           <span>{fps} fps</span>

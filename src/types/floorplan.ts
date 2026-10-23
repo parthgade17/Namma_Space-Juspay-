@@ -1,27 +1,67 @@
 export interface BoundingBox2D {
-  x: number; // Center or min
+  x: number;
   z: number;
-  width: number; // Dimension along X
-  depth: number; // Dimension along Z
+  width: number;
+  depth: number;
 }
 
 export interface Doorway {
   id: string;
   wall: 'north' | 'south' | 'east' | 'west';
-  position: [number, number, number]; // [x, y, z] center of doorway
+  position: [number, number, number];
   width: number;
   height: number;
-  connectsTo?: string; // Room ID
+  connectsTo?: string;
   label?: string;
 }
 
+export type RealLabFurnitureType =
+  | 'pegboard'
+  | 'workbench'
+  | 'drill_press'
+  | 'chop_saw'
+  | 'step_stool'
+  | 'grey_chair'
+  | 'black_office_chair'
+  | 'wall_desk'
+  | 'socket_bar'
+  | 'oscilloscope'
+  | 'power_supply'
+  | 'laptop'
+  | 'fire_extinguisher'
+  | 'printer_3d'
+  | 'pc_monitor'
+  | 'wooden_desk'
+  | 'laser_cutter'
+  | 'small_desk'
+  | 'wall_tv'
+  | 'meeting_table'
+  | 'storage_boxes'
+  | 'kiosk'
+  | 'poster'
+  | 'poster_row'
+  | 'wooden_door'
+  | 'desk_pc'
+  | 'teacher_desk'
+  | 'chair'
+  | 'whiteboard'
+  | 'projector'
+  | 'cabinet'
+  | 'sofa'
+  | 'potted_plant'
+  | 'sink'
+  | 'cubicle'
+  | 'server_rack'
+  | 'bookshelf';
+
 export interface FurnitureItem {
   id: string;
-  type: 'desk_pc' | 'teacher_desk' | 'chair' | 'whiteboard' | 'projector' | 'cabinet' | 'sofa' | 'potted_plant' | 'sink' | 'cubicle' | 'server_rack' | 'bookshelf';
-  position: [number, number, number]; // [x, y, z]
-  rotation: [number, number, number]; // Euler angles [rx, ry, rz]
+  name?: string;
+  type: RealLabFurnitureType;
+  position: [number, number, number];
+  rotation: [number, number, number];
   scale?: [number, number, number];
-  label?: string; // e.g., "PC-01"
+  label?: string;
   meta?: {
     specs?: string;
     department?: string;
@@ -33,20 +73,18 @@ export interface FurnitureItem {
 export interface RoomDefinition {
   id: string;
   name: string;
-  type: 'lab' | 'corridor' | 'office' | 'washroom' | 'staircase' | 'exit';
-  color: string;
+  type: 'corridor' | 'entrance' | 'workshop' | 'electronics' | 'printing' | 'laser' | 'meeting' | 'study' | 'storage' | 'lab' | 'office' | 'washroom' | 'staircase' | 'exit';
+  color?: string;
   bounds: {
     minX: number;
     maxX: number;
     minZ: number;
     maxZ: number;
   };
-  doors: Doorway[];
-  furniture: FurnitureItem[];
+  doors?: Doorway[];
+  furniture?: FurnitureItem[];
   labelPosition: [number, number, number];
-  ceilingHeight: number;
-  floorTexture?: 'tiles' | 'wood' | 'carpet' | 'concrete';
-  wallColor?: string;
+  ceilingHeight?: number;
 }
 
 export interface FloorPlanData {
@@ -57,6 +95,7 @@ export interface FloorPlanData {
     width: number;
     depth: number;
     ceilingHeight: number;
+    corridorWidth?: number;
   };
   rooms: RoomDefinition[];
   exits: {

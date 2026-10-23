@@ -1,769 +1,544 @@
 {
-  "floorId": "iitb-cse-floor-3",
-  "buildingName": "Dept of Computer Science & Engineering",
-  "floorLevel": "Level 3 - Academic Complex",
+  "floorId": "real-lab-floor-1",
+  "buildingName": "Advanced Prototyping & Robotics Lab",
+  "floorLevel": "Level 1",
   "dimensions": {
-    "width": 44,
-    "depth": 24,
-    "ceilingHeight": 3.4
+    "width": 18.0,
+    "depth": 11.0,
+    "ceilingHeight": 2.85,
+    "corridorWidth": 1.5
   },
   "rooms": [
     {
       "id": "corridor",
-      "name": "Main Central Corridor",
+      "name": "Central Corridor",
       "type": "corridor",
-      "color": "#334155",
       "bounds": {
-        "minX": -21,
-        "maxX": 21,
-        "minZ": -2.2,
-        "maxZ": 2.2
+        "minX": -8.5,
+        "maxX": 8.0,
+        "minZ": -0.75,
+        "maxZ": 0.75
       },
       "doors": [],
       "furniture": [
         {
-          "id": "corridor-bench-1",
-          "type": "sofa",
-          "position": [-10, 0, -1.8],
-          "rotation": [0, 0, 0],
-          "label": "Corridor Seating A"
-        },
-        {
-          "id": "corridor-bench-2",
-          "type": "sofa",
-          "position": [2, 0, 1.8],
-          "rotation": [0, 3.1415, 0],
-          "label": "Corridor Seating B"
-        },
-        {
-          "id": "corridor-water-cooler",
-          "type": "sink",
-          "position": [-3.5, 0, 1.7],
-          "rotation": [0, 3.1415, 0],
-          "label": "Drinking Water Station"
-        },
-        {
-          "id": "corridor-plant-1",
-          "type": "potted_plant",
-          "position": [-19.5, 0, -1.5],
-          "rotation": [0, 0, 0],
-          "label": "Ficus Plant"
-        },
-        {
-          "id": "corridor-plant-2",
-          "type": "potted_plant",
-          "position": [19.5, 0, 1.5],
-          "rotation": [0, 0, 0],
-          "label": "Indoor Palm"
-        }
-      ],
-      "labelPosition": [0, 2.5, 0],
-      "ceilingHeight": 3.4,
-      "floorTexture": "tiles",
-      "wallColor": "#e2e8f0"
-    },
-    {
-      "id": "comp-lab-1",
-      "name": "Computer Lab 1 (High Perf Computing)",
-      "type": "lab",
-      "color": "#0284c7",
-      "bounds": {
-        "minX": -21,
-        "maxX": -4.5,
-        "minZ": -12,
-        "maxZ": -2.2
-      },
-      "doors": [
-        {
-          "id": "door-lab-1",
-          "wall": "south",
-          "position": [-12, 0, -2.2],
-          "width": 1.6,
-          "height": 2.4,
-          "connectsTo": "corridor",
-          "label": "Lab 1 Entrance"
-        }
-      ],
-      "furniture": [
-        {
-          "id": "pc-01",
-          "type": "desk_pc",
-          "position": [-18.5, 0, -10],
-          "rotation": [0, 0, 0],
-          "label": "PC-01",
-          "meta": { "specs": "Intel i9, 64GB RAM, RTX 4080", "assignedTo": "HPC Research", "status": "Available" }
-        },
-        {
-          "id": "pc-02",
-          "type": "desk_pc",
-          "position": [-16.0, 0, -10],
-          "rotation": [0, 0, 0],
-          "label": "PC-02",
-          "meta": { "specs": "Intel i9, 64GB RAM, RTX 4080", "assignedTo": "HPC Research", "status": "Occupied" }
-        },
-        {
-          "id": "pc-03",
-          "type": "desk_pc",
-          "position": [-13.5, 0, -10],
-          "rotation": [0, 0, 0],
-          "label": "PC-03",
-          "meta": { "specs": "Intel i9, 64GB RAM, RTX 4080", "assignedTo": "HPC Research", "status": "Available" }
-        },
-        {
-          "id": "pc-04",
-          "type": "desk_pc",
-          "position": [-11.0, 0, -10],
-          "rotation": [0, 0, 0],
-          "label": "PC-04",
-          "meta": { "specs": "Intel i9, 64GB RAM, RTX 4080", "assignedTo": "HPC Research", "status": "Available" }
-        },
-        {
-          "id": "pc-05",
-          "type": "desk_pc",
-          "position": [-8.5, 0, -10],
-          "rotation": [0, 0, 0],
-          "label": "PC-05",
-          "meta": { "specs": "Intel i9, 64GB RAM, RTX 4080", "assignedTo": "HPC Research", "status": "Available" }
-        },
-        {
-          "id": "pc-06",
-          "type": "desk_pc",
-          "position": [-6.0, 0, -10],
-          "rotation": [0, 0, 0],
-          "label": "PC-06",
-          "meta": { "specs": "Intel i9, 64GB RAM, RTX 4080", "assignedTo": "HPC Research", "status": "Occupied" }
-        },
-        {
-          "id": "pc-07",
-          "type": "desk_pc",
-          "position": [-18.5, 0, -8],
-          "rotation": [0, 0, 0],
-          "label": "PC-07",
-          "meta": { "specs": "Intel i9, 64GB RAM, RTX 4080", "assignedTo": "Distributed Systems", "status": "Available" }
-        },
-        {
-          "id": "pc-08",
-          "type": "desk_pc",
-          "position": [-16.0, 0, -8],
-          "rotation": [0, 0, 0],
-          "label": "PC-08",
-          "meta": { "specs": "Intel i9, 64GB RAM, RTX 4080", "assignedTo": "Distributed Systems", "status": "Available" }
-        },
-        {
-          "id": "pc-09",
-          "type": "desk_pc",
-          "position": [-13.5, 0, -8],
-          "rotation": [0, 0, 0],
-          "label": "PC-09",
-          "meta": { "specs": "Intel i9, 64GB RAM, RTX 4080", "assignedTo": "Distributed Systems", "status": "Occupied" }
-        },
-        {
-          "id": "pc-10",
-          "type": "desk_pc",
-          "position": [-11.0, 0, -8],
-          "rotation": [0, 0, 0],
-          "label": "PC-10",
-          "meta": { "specs": "Intel i9, 64GB RAM, RTX 4080", "assignedTo": "Distributed Systems", "status": "Available" }
-        },
-        {
-          "id": "pc-11",
-          "type": "desk_pc",
-          "position": [-8.5, 0, -8],
-          "rotation": [0, 0, 0],
-          "label": "PC-11",
-          "meta": { "specs": "Intel i9, 64GB RAM, RTX 4080", "assignedTo": "Distributed Systems", "status": "Available" }
-        },
-        {
-          "id": "pc-12",
-          "type": "desk_pc",
-          "position": [-6.0, 0, -8],
-          "rotation": [0, 0, 0],
-          "label": "PC-12",
-          "meta": { "specs": "Intel i9, 64GB RAM, RTX 4080", "assignedTo": "Distributed Systems", "status": "Available" }
-        },
-        {
-          "id": "pc-13",
-          "type": "desk_pc",
-          "position": [-18.5, 0, -6],
-          "rotation": [0, 0, 0],
-          "label": "PC-13",
-          "meta": { "specs": "Intel i9, 64GB RAM, RTX 4080", "assignedTo": "AI / ML Lab Work", "status": "Available" }
-        },
-        {
-          "id": "pc-14",
-          "type": "desk_pc",
-          "position": [-16.0, 0, -6],
-          "rotation": [0, 0, 0],
-          "label": "PC-14",
-          "meta": { "specs": "Intel i9, 64GB RAM, RTX 4080", "assignedTo": "AI / ML Lab Work", "status": "Available" }
-        },
-        {
-          "id": "pc-15",
-          "type": "desk_pc",
-          "position": [-13.5, 0, -6],
-          "rotation": [0, 0, 0],
-          "label": "PC-15",
-          "meta": { "specs": "Intel i9, 64GB RAM, RTX 4080", "assignedTo": "AI / ML Lab Work", "status": "Occupied" }
-        },
-        {
-          "id": "pc-16",
-          "type": "desk_pc",
-          "position": [-11.0, 0, -6],
-          "rotation": [0, 0, 0],
-          "label": "PC-16",
-          "meta": { "specs": "Intel i9, 64GB RAM, RTX 4080", "assignedTo": "AI / ML Lab Work", "status": "Available" }
-        },
-        {
-          "id": "pc-17",
-          "type": "desk_pc",
-          "position": [-8.5, 0, -6],
-          "rotation": [0, 0, 0],
-          "label": "PC-17",
-          "meta": { "specs": "Intel i9, 64GB RAM, RTX 4080", "assignedTo": "AI / ML Lab Work", "status": "Available" }
-        },
-        {
-          "id": "pc-18",
-          "type": "desk_pc",
-          "position": [-6.0, 0, -6],
-          "rotation": [0, 0, 0],
-          "label": "PC-18",
-          "meta": { "specs": "Intel i9, 64GB RAM, RTX 4080", "assignedTo": "AI / ML Lab Work", "status": "Available" }
-        },
-        {
-          "id": "pc-19",
-          "type": "desk_pc",
-          "position": [-18.5, 0, -4.2],
-          "rotation": [0, 0, 0],
-          "label": "PC-19",
-          "meta": { "specs": "Intel i9, 64GB RAM, RTX 4080", "assignedTo": "Computer Vision", "status": "Available" }
-        },
-        {
-          "id": "pc-20",
-          "type": "desk_pc",
-          "position": [-16.0, 0, -4.2],
-          "rotation": [0, 0, 0],
-          "label": "PC-20",
-          "meta": { "specs": "Intel i9, 64GB RAM, RTX 4080", "assignedTo": "Computer Vision", "status": "Occupied" }
-        },
-        {
-          "id": "pc-21",
-          "type": "desk_pc",
-          "position": [-13.5, 0, -4.2],
-          "rotation": [0, 0, 0],
-          "label": "PC-21",
-          "meta": { "specs": "Intel i9, 64GB RAM, RTX 4080", "assignedTo": "Computer Vision", "status": "Available" }
-        },
-        {
-          "id": "pc-22",
-          "type": "desk_pc",
-          "position": [-11.0, 0, -4.2],
-          "rotation": [0, 0, 0],
-          "label": "PC-22",
-          "meta": { "specs": "Intel i9, 64GB RAM, RTX 4080", "assignedTo": "Computer Vision", "status": "Available" }
-        },
-        {
-          "id": "pc-23",
-          "type": "desk_pc",
-          "position": [-8.5, 0, -4.2],
-          "rotation": [0, 0, 0],
-          "label": "PC-23",
-          "meta": { "specs": "Intel i9, 64GB RAM, RTX 4080", "assignedTo": "Computer Vision", "status": "Available" }
-        },
-        {
-          "id": "pc-24",
-          "type": "desk_pc",
-          "position": [-6.0, 0, -4.2],
-          "rotation": [0, 0, 0],
-          "label": "PC-24",
-          "meta": { "specs": "Intel i9, 64GB RAM, RTX 4080", "assignedTo": "Computer Vision", "status": "Available" }
-        },
-        {
-          "id": "teacher-desk-lab-1",
-          "type": "teacher_desk",
-          "position": [-12.5, 0, -11.2],
-          "rotation": [0, 3.1415, 0],
-          "label": "Instructor Podium & Console",
-          "meta": { "specs": "AV Master Control + Visualizer", "assignedTo": "Lab Instructor" }
-        },
-        {
-          "id": "whiteboard-lab-1",
-          "type": "whiteboard",
-          "position": [-12.5, 1.4, -11.9],
-          "rotation": [0, 0, 0],
-          "label": "Lab 1 Whiteboard"
-        },
-        {
-          "id": "projector-screen-lab-1",
-          "type": "projector",
-          "position": [-12.5, 2.7, -11.7],
-          "rotation": [0, 0, 0],
-          "label": "4K Projector Screen"
-        },
-        {
-          "id": "server-rack-lab-1",
-          "type": "server_rack",
-          "position": [-20.0, 0, -11.2],
-          "rotation": [0, 1.57, 0],
-          "label": "HPC Rack Cluster"
-        },
-        {
-          "id": "cabinet-lab-1",
-          "type": "cabinet",
-          "position": [-5.2, 0, -11.2],
+          "id": "attendance-kiosk",
+          "name": "Attendance Kiosk",
+          "type": "kiosk",
+          "position": [-7.8, 0, 0.45],
           "rotation": [0, -1.57, 0],
-          "label": "Lab Equipment Cabinet"
+          "label": "Face Recognition Kiosk"
+        },
+        {
+          "id": "qr-poster",
+          "name": "QR Poster",
+          "type": "poster",
+          "position": [-7.8, 1.45, -0.74],
+          "rotation": [0, 0, 0],
+          "label": "QR Lab Register"
         }
       ],
-      "labelPosition": [-12.5, 2.8, -7],
-      "ceilingHeight": 3.4,
-      "floorTexture": "tiles",
-      "wallColor": "#e0f2fe"
+      "labelPosition": [0, 1.4, 0]
     },
     {
-      "id": "hod-cabin",
-      "name": "HOD Cabin (Prof. S. R. Sharma)",
-      "type": "office",
-      "color": "#d97706",
+      "id": "entrance",
+      "name": "Entrance & Reception",
+      "type": "entrance",
       "bounds": {
-        "minX": -3.5,
-        "maxX": 6.5,
-        "minZ": -12,
-        "maxZ": -2.2
+        "minX": -9.0,
+        "maxX": -7.0,
+        "minZ": -0.75,
+        "maxZ": 0.75
       },
       "doors": [
         {
-          "id": "door-hod",
-          "wall": "south",
-          "position": [1.5, 0, -2.2],
+          "id": "door-main-entrance",
+          "wall": "west",
+          "position": [-8.5, 0, 0],
           "width": 1.2,
-          "height": 2.4,
-          "connectsTo": "corridor",
-          "label": "HOD Cabin Entrance"
+          "height": 2.3,
+          "label": "Main Entrance Door"
         }
       ],
       "furniture": [
         {
-          "id": "hod-executive-desk",
-          "type": "teacher_desk",
-          "position": [1.5, 0, -9.5],
-          "rotation": [0, 3.1415, 0],
-          "label": "HOD Executive Desk",
-          "meta": { "specs": "Apple M3 Max Studio, Phone & Seal", "assignedTo": "Head of Department" }
-        },
-        {
-          "id": "hod-sofa-lounge",
-          "type": "sofa",
-          "position": [-1.8, 0, -6.5],
+          "id": "main-door",
+          "name": "Entrance Door",
+          "type": "wooden_door",
+          "position": [-8.5, 0, 0],
           "rotation": [0, 1.57, 0],
-          "label": "Executive Lounge Sofa"
-        },
-        {
-          "id": "hod-bookshelf-1",
-          "type": "bookshelf",
-          "position": [-3.0, 0, -10.5],
-          "rotation": [0, 1.57, 0],
-          "label": "Department Archive & Journals"
-        },
-        {
-          "id": "hod-bookshelf-2",
-          "type": "bookshelf",
-          "position": [5.8, 0, -10.5],
-          "rotation": [0, -1.57, 0],
-          "label": "Awards & Research Publications"
-        },
-        {
-          "id": "hod-plant",
-          "type": "potted_plant",
-          "position": [5.5, 0, -3.2],
-          "rotation": [0, 0, 0],
-          "label": "Decorative Bonsai"
+          "label": "Wooden Entrance Door"
         }
       ],
-      "labelPosition": [1.5, 2.8, -7],
-      "ceilingHeight": 3.4,
-      "floorTexture": "wood",
-      "wallColor": "#fef3c7"
+      "labelPosition": [-8.0, 1.4, 0]
     },
     {
-      "id": "staff-room",
-      "name": "Faculty Staff Room & Research Annex",
-      "type": "office",
-      "color": "#10b981",
+      "id": "workshop",
+      "name": "Mechanical Workshop",
+      "type": "workshop",
       "bounds": {
-        "minX": 7.5,
-        "maxX": 21,
-        "minZ": -12,
-        "maxZ": -2.2
+        "minX": -7.5,
+        "maxX": -2.2,
+        "minZ": -5.2,
+        "maxZ": -0.75
       },
       "doors": [
         {
-          "id": "door-staff",
+          "id": "door-workshop",
           "wall": "south",
-          "position": [14, 0, -2.2],
-          "width": 1.4,
-          "height": 2.4,
-          "connectsTo": "corridor",
-          "label": "Staff Room Entrance"
-        }
-      ],
-      "furniture": [
-        {
-          "id": "faculty-cubicle-1",
-          "type": "cubicle",
-          "position": [10.5, 0, -9.5],
-          "rotation": [0, 0, 0],
-          "label": "Dr. Ananya Roy (AI/ML)"
-        },
-        {
-          "id": "faculty-cubicle-2",
-          "type": "cubicle",
-          "position": [14.0, 0, -9.5],
-          "rotation": [0, 0, 0],
-          "label": "Prof. V. Raman (Cybersecurity)"
-        },
-        {
-          "id": "faculty-cubicle-3",
-          "type": "cubicle",
-          "position": [17.5, 0, -9.5],
-          "rotation": [0, 0, 0],
-          "label": "Dr. K. Mehta (Robotics)"
-        },
-        {
-          "id": "faculty-cubicle-4",
-          "type": "cubicle",
-          "position": [10.5, 0, -5.5],
-          "rotation": [0, 3.1415, 0],
-          "label": "Prof. T. Iyer (Theoretical CS)"
-        },
-        {
-          "id": "faculty-cubicle-5",
-          "type": "cubicle",
-          "position": [14.0, 0, -5.5],
-          "rotation": [0, 3.1415, 0],
-          "label": "Dr. P. Sen (Computer Vision)"
-        },
-        {
-          "id": "faculty-cubicle-6",
-          "type": "cubicle",
-          "position": [17.5, 0, -5.5],
-          "rotation": [0, 3.1415, 0],
-          "label": "Prof. S. Das (Cloud Systems)"
-        },
-        {
-          "id": "staff-notice-board",
-          "type": "whiteboard",
-          "position": [14.2, 1.5, -11.9],
-          "rotation": [0, 0, 0],
-          "label": "Faculty Notice Board"
-        },
-        {
-          "id": "staff-water-cooler",
-          "type": "sink",
-          "position": [8.2, 0, -3.0],
-          "rotation": [0, 1.57, 0],
-          "label": "Coffee & Tea Lounge"
-        }
-      ],
-      "labelPosition": [14.2, 2.8, -7],
-      "ceilingHeight": 3.4,
-      "floorTexture": "carpet",
-      "wallColor": "#ecfdf5"
-    },
-    {
-      "id": "comp-lab-2",
-      "name": "Computer Lab 2 (AI, IoT & Robotics)",
-      "type": "lab",
-      "color": "#6366f1",
-      "bounds": {
-        "minX": -21,
-        "maxX": -6.5,
-        "minZ": 2.2,
-        "maxZ": 12
-      },
-      "doors": [
-        {
-          "id": "door-lab-2",
-          "wall": "north",
-          "position": [-13.5, 0, 2.2],
-          "width": 1.6,
-          "height": 2.4,
-          "connectsTo": "corridor",
-          "label": "Lab 2 Entrance"
-        }
-      ],
-      "furniture": [
-        {
-          "id": "pc-25",
-          "type": "desk_pc",
-          "position": [-18.5, 0, 4.5],
-          "rotation": [0, 3.1415, 0],
-          "label": "PC-25",
-          "meta": { "specs": "Dual RTX 4090, 128GB RAM", "assignedTo": "Generative AI", "status": "Available" }
-        },
-        {
-          "id": "pc-26",
-          "type": "desk_pc",
-          "position": [-16.0, 0, 4.5],
-          "rotation": [0, 3.1415, 0],
-          "label": "PC-26",
-          "meta": { "specs": "Dual RTX 4090, 128GB RAM", "assignedTo": "Generative AI", "status": "Available" }
-        },
-        {
-          "id": "pc-27",
-          "type": "desk_pc",
-          "position": [-13.5, 0, 4.5],
-          "rotation": [0, 3.1415, 0],
-          "label": "PC-27",
-          "meta": { "specs": "Dual RTX 4090, 128GB RAM", "assignedTo": "Generative AI", "status": "Occupied" }
-        },
-        {
-          "id": "pc-28",
-          "type": "desk_pc",
-          "position": [-11.0, 0, 4.5],
-          "rotation": [0, 3.1415, 0],
-          "label": "PC-28",
-          "meta": { "specs": "Dual RTX 4090, 128GB RAM", "assignedTo": "Generative AI", "status": "Available" }
-        },
-        {
-          "id": "pc-29",
-          "type": "desk_pc",
-          "position": [-8.5, 0, 4.5],
-          "rotation": [0, 3.1415, 0],
-          "label": "PC-29",
-          "meta": { "specs": "Dual RTX 4090, 128GB RAM", "assignedTo": "Generative AI", "status": "Available" }
-        },
-        {
-          "id": "pc-30",
-          "type": "desk_pc",
-          "position": [-18.5, 0, 7.0],
-          "rotation": [0, 3.1415, 0],
-          "label": "PC-30",
-          "meta": { "specs": "Robotics ROS2 Workstation", "assignedTo": "SLAM & Nav", "status": "Available" }
-        },
-        {
-          "id": "pc-31",
-          "type": "desk_pc",
-          "position": [-16.0, 0, 7.0],
-          "rotation": [0, 3.1415, 0],
-          "label": "PC-31",
-          "meta": { "specs": "Robotics ROS2 Workstation", "assignedTo": "SLAM & Nav", "status": "Available" }
-        },
-        {
-          "id": "pc-32",
-          "type": "desk_pc",
-          "position": [-13.5, 0, 7.0],
-          "rotation": [0, 3.1415, 0],
-          "label": "PC-32",
-          "meta": { "specs": "Robotics ROS2 Workstation", "assignedTo": "SLAM & Nav", "status": "Occupied" }
-        },
-        {
-          "id": "pc-33",
-          "type": "desk_pc",
-          "position": [-11.0, 0, 7.0],
-          "rotation": [0, 3.1415, 0],
-          "label": "PC-33",
-          "meta": { "specs": "Robotics ROS2 Workstation", "assignedTo": "SLAM & Nav", "status": "Available" }
-        },
-        {
-          "id": "pc-34",
-          "type": "desk_pc",
-          "position": [-8.5, 0, 7.0],
-          "rotation": [0, 3.1415, 0],
-          "label": "PC-34",
-          "meta": { "specs": "Robotics ROS2 Workstation", "assignedTo": "SLAM & Nav", "status": "Available" }
-        },
-        {
-          "id": "teacher-desk-lab-2",
-          "type": "teacher_desk",
-          "position": [-13.5, 0, 10.5],
-          "rotation": [0, 0, 0],
-          "label": "Lab 2 Faculty Console"
-        },
-        {
-          "id": "whiteboard-lab-2",
-          "type": "whiteboard",
-          "position": [-13.5, 1.4, 11.9],
-          "rotation": [0, 3.1415, 0],
-          "label": "Lab 2 Whiteboard"
-        },
-        {
-          "id": "server-rack-lab-2",
-          "type": "server_rack",
-          "position": [-20.0, 0, 10.5],
-          "rotation": [0, 1.57, 0],
-          "label": "Edge TPU Cluster Rack"
-        }
-      ],
-      "labelPosition": [-13.5, 2.8, 7.5],
-      "ceilingHeight": 3.4,
-      "floorTexture": "tiles",
-      "wallColor": "#eef2ff"
-    },
-    {
-      "id": "washroom",
-      "name": "Restroom & Washroom",
-      "type": "washroom",
-      "color": "#06b6d4",
-      "bounds": {
-        "minX": -5.5,
-        "maxX": 1.5,
-        "minZ": 2.2,
-        "maxZ": 12
-      },
-      "doors": [
-        {
-          "id": "door-washroom",
-          "wall": "north",
-          "position": [-2.0, 0, 2.2],
+          "position": [-4.8, 0, -0.75],
           "width": 1.2,
-          "height": 2.4,
-          "connectsTo": "corridor",
-          "label": "Washroom Entrance"
+          "height": 2.3,
+          "label": "Workshop Entry"
         }
       ],
       "furniture": [
         {
-          "id": "washroom-sink-1",
-          "type": "sink",
-          "position": [-4.5, 0, 5.0],
-          "rotation": [0, 1.57, 0],
-          "label": "Dual Ceramic Sink & Mirrors"
-        },
-        {
-          "id": "washroom-cubicle-1",
-          "type": "cubicle",
-          "position": [-1.0, 0, 9.5],
-          "rotation": [0, 3.1415, 0],
-          "label": "Restroom Stall 1"
-        },
-        {
-          "id": "washroom-cubicle-2",
-          "type": "cubicle",
-          "position": [-3.5, 0, 9.5],
-          "rotation": [0, 3.1415, 0],
-          "label": "Restroom Stall 2"
-        }
-      ],
-      "labelPosition": [-2.0, 2.8, 7.0],
-      "ceilingHeight": 3.4,
-      "floorTexture": "tiles",
-      "wallColor": "#ecfeff"
-    },
-    {
-      "id": "staircase",
-      "name": "Central Staircase & Elevators",
-      "type": "staircase",
-      "color": "#8b5cf6",
-      "bounds": {
-        "minX": 2.5,
-        "maxX": 11.5,
-        "minZ": 2.2,
-        "maxZ": 12
-      },
-      "doors": [
-        {
-          "id": "door-staircase",
-          "wall": "north",
-          "position": [7.0, 0, 2.2],
-          "width": 1.8,
-          "height": 2.4,
-          "connectsTo": "corridor",
-          "label": "Stairwell Access"
-        }
-      ],
-      "furniture": [
-        {
-          "id": "stair-block-1",
-          "type": "cabinet",
-          "position": [5.5, 0, 7.5],
+          "id": "tool-wall",
+          "name": "Tool Wall",
+          "type": "pegboard",
+          "position": [-4.8, 1.35, -5.15],
           "rotation": [0, 0, 0],
-          "scale": [2.5, 1.2, 3.5],
-          "label": "Stair Flight (Levels 2-4)"
+          "scale": [3.6, 1.3, 0.04],
+          "label": "Blue Pegboard Tool Wall"
         },
         {
-          "id": "elevator-sign",
-          "type": "whiteboard",
-          "position": [10.5, 1.5, 7.5],
-          "rotation": [0, -1.57, 0],
-          "label": "High-Speed Elevator Core"
+          "id": "safety-posters",
+          "name": "Safety Posters",
+          "type": "poster_row",
+          "position": [-4.8, 2.3, -5.14],
+          "rotation": [0, 0, 0],
+          "scale": [3.4, 0.55, 0.02],
+          "label": "4 Yellow Safety Posters"
+        },
+        {
+          "id": "mech-workbench",
+          "name": "Workshop Workbench",
+          "type": "workbench",
+          "position": [-4.8, 0, -4.2],
+          "rotation": [0, 0, 0],
+          "scale": [3.8, 0.85, 0.9],
+          "label": "Long Wooden Workbench"
+        },
+        {
+          "id": "drill-press",
+          "name": "Drill Press",
+          "type": "drill_press",
+          "position": [-6.0, 0.85, -4.2],
+          "rotation": [0, 0, 0],
+          "label": "Bench Drill Press"
+        },
+        {
+          "id": "chop-saw",
+          "name": "Chop Saw",
+          "type": "chop_saw",
+          "position": [-3.6, 0.85, -4.2],
+          "rotation": [0, 0, 0],
+          "label": "Metal Chop Saw"
+        },
+        {
+          "id": "step-stool",
+          "name": "Step Stool",
+          "type": "step_stool",
+          "position": [-2.7, 0, -3.2],
+          "rotation": [0, 0.4, 0],
+          "label": "White A-Frame Stool"
+        },
+        {
+          "id": "chair-workshop-1",
+          "name": "Workshop Chair 1",
+          "type": "grey_chair",
+          "position": [-5.2, 0, -3.2],
+          "rotation": [0, 3.14, 0]
+        },
+        {
+          "id": "chair-workshop-2",
+          "name": "Workshop Chair 2",
+          "type": "grey_chair",
+          "position": [-4.2, 0, -3.2],
+          "rotation": [0, 3.14, 0]
         }
       ],
-      "labelPosition": [7.0, 2.8, 7.0],
-      "ceilingHeight": 3.4,
-      "floorTexture": "concrete",
-      "wallColor": "#f3e8ff"
+      "labelPosition": [-4.8, 1.4, -3.0]
     },
     {
-      "id": "main-exit",
-      "name": "Main Entrance & Emergency Exit",
-      "type": "exit",
-      "color": "#ef4444",
+      "id": "electronics",
+      "name": "Electronics Bench Room",
+      "type": "electronics",
       "bounds": {
-        "minX": 12.5,
-        "maxX": 21,
-        "minZ": 2.2,
-        "maxZ": 12
+        "minX": -2.2,
+        "maxX": 3.4,
+        "minZ": -5.2,
+        "maxZ": -0.75
       },
       "doors": [
         {
-          "id": "door-exit-corridor",
-          "wall": "north",
-          "position": [16.5, 0, 2.2],
-          "width": 2.0,
-          "height": 2.4,
-          "connectsTo": "corridor",
-          "label": "Main Exit Double Doors"
-        },
-        {
-          "id": "door-exit-exterior",
+          "id": "door-electronics",
           "wall": "south",
-          "position": [16.5, 0, 12],
-          "width": 2.2,
-          "height": 2.6,
-          "connectsTo": "exterior",
-          "label": "Emergency Skywalk Exit"
+          "position": [0.6, 0, -0.75],
+          "width": 1.2,
+          "height": 2.3,
+          "label": "Electronics Entry"
         }
       ],
       "furniture": [
         {
-          "id": "exit-security-desk",
-          "type": "teacher_desk",
-          "position": [14.5, 0, 7.0],
-          "rotation": [0, 1.57, 0],
-          "label": "Security Checkpoint & RFID Gate"
-        },
-        {
-          "id": "fire-extinguisher-station",
-          "type": "cabinet",
-          "position": [20.2, 0, 6.0],
-          "rotation": [0, -1.57, 0],
-          "label": "Emergency Fire Hose & Extinguisher"
-        },
-        {
-          "id": "exit-plant",
-          "type": "potted_plant",
-          "position": [13.2, 0, 10.5],
+          "id": "electronics-bench",
+          "name": "Electronics Bench",
+          "type": "wall_desk",
+          "position": [0.6, 0, -4.6],
           "rotation": [0, 0, 0],
-          "label": "Lobby Palm"
+          "scale": [5.0, 0.78, 0.8],
+          "label": "Long Electronics Desk"
+        },
+        {
+          "id": "power-sockets",
+          "name": "Power Sockets",
+          "type": "socket_bar",
+          "position": [0.6, 1.15, -5.17],
+          "rotation": [0, 0, 0],
+          "scale": [4.8, 0.14, 0.03],
+          "label": "Row of Power Sockets"
+        },
+        {
+          "id": "oscilloscope-1",
+          "name": "Oscilloscope",
+          "type": "oscilloscope",
+          "position": [-1.2, 0.78, -4.6],
+          "rotation": [0, 0, 0],
+          "label": "Digital Oscilloscope"
+        },
+        {
+          "id": "power-supply-1",
+          "name": "Bench Power Supply",
+          "type": "power_supply",
+          "position": [-0.3, 0.78, -4.6],
+          "rotation": [0, 0, 0],
+          "label": "DC Bench Power Supply"
+        },
+        {
+          "id": "laptop-1",
+          "name": "Lab Laptop",
+          "type": "laptop",
+          "position": [1.4, 0.78, -4.5],
+          "rotation": [0, 0, 0],
+          "label": "Testing Laptop"
+        },
+        {
+          "id": "fire-extinguisher",
+          "name": "Fire Extinguisher",
+          "type": "fire_extinguisher",
+          "position": [-2.15, 1.3, -2.5],
+          "rotation": [0, 1.57, 0],
+          "label": "Fire Extinguisher"
+        },
+        {
+          "id": "chair-elec-1",
+          "name": "Electronics Chair 1",
+          "type": "grey_chair",
+          "position": [-0.8, 0, -3.7],
+          "rotation": [0, 3.14, 0]
+        },
+        {
+          "id": "chair-elec-2",
+          "name": "Electronics Chair 2",
+          "type": "grey_chair",
+          "position": [1.2, 0, -3.7],
+          "rotation": [0, 3.14, 0]
         }
       ],
-      "labelPosition": [16.5, 2.8, 7.0],
-      "ceilingHeight": 3.4,
-      "floorTexture": "tiles",
-      "wallColor": "#fef2f2"
+      "labelPosition": [0.6, 1.4, -3.0]
+    },
+    {
+      "id": "printing-3d",
+      "name": "3D Printing Area",
+      "type": "printing",
+      "bounds": {
+        "minX": 3.4,
+        "maxX": 8.0,
+        "minZ": -5.2,
+        "maxZ": -0.75
+      },
+      "doors": [
+        {
+          "id": "door-printing",
+          "wall": "south",
+          "position": [5.6, 0, -0.75],
+          "width": 1.2,
+          "height": 2.3,
+          "label": "3D Print Entry"
+        }
+      ],
+      "furniture": [
+        {
+          "id": "printing-desk",
+          "name": "3D Printing Desk",
+          "type": "wooden_desk",
+          "position": [5.6, 0, -4.4],
+          "rotation": [0, 0, 0],
+          "scale": [4.0, 0.8, 0.85],
+          "label": "3D Printing Workbench"
+        },
+        {
+          "id": "printer-3d-1",
+          "name": "3D Printer A",
+          "type": "printer_3d",
+          "position": [4.3, 0.8, -4.4],
+          "rotation": [0, 0, 0],
+          "label": "Enclosed 3D Printer 1"
+        },
+        {
+          "id": "printer-3d-2",
+          "name": "3D Printer B",
+          "type": "printer_3d",
+          "position": [5.5, 0.8, -4.4],
+          "rotation": [0, 0, 0],
+          "label": "Enclosed 3D Printer 2"
+        },
+        {
+          "id": "print-pc",
+          "name": "Control PC",
+          "type": "pc_monitor",
+          "position": [6.8, 0.8, -4.4],
+          "rotation": [0, 0, 0],
+          "label": "Slicer Desktop Workstation"
+        },
+        {
+          "id": "chair-print",
+          "name": "Print Chair",
+          "type": "grey_chair",
+          "position": [6.8, 0, -3.5],
+          "rotation": [0, 3.14, 0]
+        }
+      ],
+      "labelPosition": [5.6, 1.4, -3.0]
+    },
+    {
+      "id": "laser-cutter",
+      "name": "Laser Cutter Cabin",
+      "type": "laser",
+      "bounds": {
+        "minX": -7.5,
+        "maxX": -2.8,
+        "minZ": 0.75,
+        "maxZ": 5.0
+      },
+      "doors": [
+        {
+          "id": "door-laser",
+          "wall": "north",
+          "position": [-5.2, 0, 0.75],
+          "width": 1.1,
+          "height": 2.3,
+          "label": "Laser Cabin Door"
+        }
+      ],
+      "furniture": [
+        {
+          "id": "laser-machine",
+          "name": "Laser Cutter",
+          "type": "laser_cutter",
+          "position": [-5.2, 0, 3.5],
+          "rotation": [0, 3.14, 0],
+          "scale": [1.8, 1.05, 1.25],
+          "label": "CNC Laser Cutting Machine"
+        },
+        {
+          "id": "laser-operator-desk",
+          "name": "Operator Desk",
+          "type": "small_desk",
+          "position": [-3.4, 0, 3.6],
+          "rotation": [0, -1.57, 0],
+          "scale": [1.0, 0.75, 0.6],
+          "label": "Laser Console Desk"
+        },
+        {
+          "id": "chair-laser",
+          "name": "Operator Chair",
+          "type": "black_office_chair",
+          "position": [-3.4, 0, 2.7],
+          "rotation": [0, 3.14, 0]
+        }
+      ],
+      "labelPosition": [-5.2, 1.4, 2.8]
+    },
+    {
+      "id": "meeting-room",
+      "name": "Meeting Room",
+      "type": "meeting",
+      "bounds": {
+        "minX": -2.8,
+        "maxX": 2.6,
+        "minZ": 0.75,
+        "maxZ": 5.0
+      },
+      "doors": [
+        {
+          "id": "door-meeting",
+          "wall": "north",
+          "position": [-0.2, 0, 0.75],
+          "width": 1.2,
+          "height": 2.3,
+          "label": "Meeting Room Entry"
+        }
+      ],
+      "furniture": [
+        {
+          "id": "meeting-tv",
+          "name": "Meeting TV",
+          "type": "wall_tv",
+          "position": [-0.1, 1.55, 4.96],
+          "rotation": [0, 3.14, 0],
+          "scale": [1.8, 1.05, 0.08],
+          "label": "Wall-Mounted Conference TV"
+        },
+        {
+          "id": "meeting-table",
+          "name": "Conference Table",
+          "type": "meeting_table",
+          "position": [-0.1, 0, 2.8],
+          "rotation": [0, 0, 0],
+          "scale": [3.2, 0.76, 1.4],
+          "label": "Large Wooden Meeting Table"
+        },
+        {
+          "id": "chair-meet-1",
+          "name": "Meeting Chair 1",
+          "type": "grey_chair",
+          "position": [-1.0, 0, 2.0],
+          "rotation": [0, 0, 0]
+        },
+        {
+          "id": "chair-meet-2",
+          "name": "Meeting Chair 2",
+          "type": "grey_chair",
+          "position": [0.0, 0, 2.0],
+          "rotation": [0, 0, 0]
+        },
+        {
+          "id": "chair-meet-3",
+          "name": "Meeting Chair 3",
+          "type": "grey_chair",
+          "position": [1.0, 0, 2.0],
+          "rotation": [0, 0, 0]
+        },
+        {
+          "id": "chair-meet-4",
+          "name": "Meeting Chair 4",
+          "type": "grey_chair",
+          "position": [-1.0, 0, 3.6],
+          "rotation": [0, 3.14, 0]
+        },
+        {
+          "id": "chair-meet-5",
+          "name": "Meeting Chair 5",
+          "type": "grey_chair",
+          "position": [0.0, 0, 3.6],
+          "rotation": [0, 3.14, 0]
+        },
+        {
+          "id": "chair-meet-6",
+          "name": "Meeting Chair 6",
+          "type": "grey_chair",
+          "position": [1.0, 0, 3.6],
+          "rotation": [0, 3.14, 0]
+        }
+      ],
+      "labelPosition": [-0.1, 1.4, 2.8]
+    },
+    {
+      "id": "study-area",
+      "name": "Study Area Along Windows",
+      "type": "study",
+      "bounds": {
+        "minX": 2.6,
+        "maxX": 6.8,
+        "minZ": 0.75,
+        "maxZ": 5.0
+      },
+      "doors": [
+        {
+          "id": "door-study",
+          "wall": "north",
+          "position": [4.5, 0, 0.75],
+          "width": 1.2,
+          "height": 2.3,
+          "label": "Study Area Entry"
+        }
+      ],
+      "furniture": [
+        {
+          "id": "study-desk",
+          "name": "Study Desk",
+          "type": "wall_desk",
+          "position": [4.7, 0, 4.4],
+          "rotation": [0, 3.14, 0],
+          "scale": [3.6, 0.76, 0.7],
+          "label": "Long Study Wall Desk"
+        },
+        {
+          "id": "chair-study-1",
+          "name": "Study Chair 1",
+          "type": "black_office_chair",
+          "position": [3.6, 0, 3.6],
+          "rotation": [0, 0, 0]
+        },
+        {
+          "id": "chair-study-2",
+          "name": "Study Chair 2",
+          "type": "black_office_chair",
+          "position": [4.7, 0, 3.6],
+          "rotation": [0, 0, 0]
+        },
+        {
+          "id": "chair-study-3",
+          "name": "Study Chair 3",
+          "type": "black_office_chair",
+          "position": [5.8, 0, 3.6],
+          "rotation": [0, 0, 0]
+        }
+      ],
+      "labelPosition": [4.7, 1.4, 2.8]
+    },
+    {
+      "id": "storage",
+      "name": "Storage Corner",
+      "type": "storage",
+      "bounds": {
+        "minX": 6.8,
+        "maxX": 8.5,
+        "minZ": 0.75,
+        "maxZ": 5.0
+      },
+      "doors": [
+        {
+          "id": "door-storage",
+          "wall": "north",
+          "position": [7.6, 0, 0.75],
+          "width": 1.0,
+          "height": 2.3,
+          "label": "Storage Entry"
+        }
+      ],
+      "furniture": [
+        {
+          "id": "boxes-stack-1",
+          "name": "Cardboard Boxes",
+          "type": "storage_boxes",
+          "position": [7.6, 0, 3.5],
+          "rotation": [0, 0.2, 0],
+          "scale": [1.1, 1.2, 1.1],
+          "label": "Cardboard Sheets & Material Boxes"
+        }
+      ],
+      "labelPosition": [7.6, 1.4, 2.8]
     }
   ],
   "exits": [
     {
-      "id": "exit-main",
-      "name": "Main Floor Exit & Skywalk",
-      "position": [16.5, 0, 11.5],
-      "isEmergencyExit": true
-    },
-    {
-      "id": "exit-stairwell",
-      "name": "Emergency Fire Stairwell",
-      "position": [7.0, 0, 2.8],
+      "id": "exit-entrance",
+      "name": "Main Entrance & Exit",
+      "position": [-8.2, 0, 0],
       "isEmergencyExit": true
     }
   ]

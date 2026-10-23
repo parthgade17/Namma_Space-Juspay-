@@ -11,22 +11,21 @@ export interface NavGrid {
   resolution: number;
   cols: number;
   rows: number;
-  walkable: boolean[][]; // [row][col] -> true if walkable
+  walkable: boolean[][];
   worldToGrid: (x: number, z: number) => { col: number; row: number } | null;
   gridToWorld: (col: number, row: number) => { x: number; z: number };
   isWalkableWorld: (x: number, z: number) => boolean;
 }
 
-export function buildNavGrid(resolution = 0.3, padding = 0.35): NavGrid {
-  const minX = -22;
-  const maxX = 22;
-  const minZ = -13;
-  const maxZ = 13;
+export function buildNavGrid(resolution = 0.25, padding = 0.3): NavGrid {
+  const minX = -10.5;
+  const maxX = 10.0;
+  const minZ = -6.2;
+  const maxZ = 6.0;
 
   const cols = Math.ceil((maxX - minX) / resolution);
   const rows = Math.ceil((maxZ - minZ) / resolution);
 
-  // Initialize all as unwalkable
   const walkable: boolean[][] = Array.from({ length: rows }, () => Array(cols).fill(false));
 
   const worldToGrid = (x: number, z: number) => {
@@ -43,7 +42,6 @@ export function buildNavGrid(resolution = 0.3, padding = 0.35): NavGrid {
     return { x, z };
   };
 
-  // Helper: check if point (x,z) is inside any room bounds
   const getRoomAt = (x: number, z: number): RoomDefinition | null => {
     for (const room of floorPlan.rooms) {
       if (
@@ -58,24 +56,21 @@ export function buildNavGrid(resolution = 0.3, padding = 0.35): NavGrid {
     return null;
   };
 
-  // Helper: check if point (x,z) is inside any doorway gap
   const isInsideDoorway = (x: number, z: number): boolean => {
     for (const room of floorPlan.rooms) {
-      for (const door of room.doors) {
+      for (const door of room.doors || []) {
         const dx = Math.abs(x - door.position[0]);
         const dz = Math.abs(z - door.position[2]);
-        // Allow a comfortable threshold around the door center
         if (door.wall === 'north' || door.wall === 'south') {
-          if (dx <= door.width / 2 && dz <= 0.6) return true;
+          if (dx <= (door.width / 2) + 0.1 && dz <= 0.45) return true;
         } else {
-          if (dz <= door.width / 2 && dx <= 0.6) return true;
+          if (dz <= (door.width / 2) + 0.1 && dx <= 0.45) return true;
         }
       }
     }
     return false;
   };
 
-  // Helper: check if point (x,z) is too close to a wall edge
   const isNearWallEdge = (x: number, z: number, room: RoomDefinition): boolean => {
     const wallMargin = padding;
     const nearMinX = Math.abs(x - room.bounds.minX) < wallMargin;
@@ -84,34 +79,31 @@ export function buildNavGrid(resolution = 0.3, padding = 0.35): NavGrid {
     const nearMaxZ = Math.abs(z - room.bounds.maxZ) < wallMargin;
 
     if (nearMinX || nearMaxX || nearMinZ || nearMaxZ) {
-      // If it's near a wall, check if it's a doorway
       return !isInsideDoorway(x, z);
     }
     return false;
   };
 
-  // Helper: check if point (x,z) collides with furniture
   const collidesWithFurniture = (x: number, z: number, room: RoomDefinition): boolean => {
-    for (const item of room.furniture) {
-      // Approximate furniture radius based on type
-      let radius = 0.55;
-      if (item.type === 'whiteboard' || item.type === 'projector') continue; // Mounted high up on wall/ceiling
-      if (item.type === 'desk_pc') radius = 0.55;
-      if (item.type === 'teacher_desk') radius = 0.8;
-      if (item.type === 'cubicle') radius = 0.85;
-      if (item.type === 'server_rack' || item.type === 'cabinet') radius = 0.7;
-      if (item.type === 'sofa') radius = 0.65;
-      if (item.type === 'sink') radius = 0.5;
+    for (const item of room.furniture || []) {
+      if (item.type === 'pegboard' || item.type === 'poster' || item.type === 'poster_row' || item.type === 'socket_bar' || item.type === 'wall_tv') {
+        continue; // Wall-mounted
+      }
+
+      let rad = 0.5;
+      if (item.type === 'workbench' || item.type === 'meeting_table') rad = 0.75;
+      else if (item.type === 'laser_cutter') rad = 0.85;
+      else if (item.type === 'storage_boxes') rad = 0.65;
+      else if (item.type === 'grey_chair' || item.type === 'black_office_chair') rad = 0.35;
 
       const dist = Math.hypot(x - item.position[0], z - item.position[2]);
-      if (dist < radius + padding * 0.5) {
+      if (dist < rad + padding * 0.4) {
         return true;
       }
     }
     return false;
   };
 
-  // Rasterize grid
   for (let r = 0; r < rows; r++) {
     for (let c = 0; c < cols; c++) {
       const { x, z } = gridToWorld(c, r);
@@ -122,19 +114,16 @@ export function buildNavGrid(resolution = 0.3, padding = 0.35): NavGrid {
         continue;
       }
 
-      // Check if inside doorway (always walkable)
       if (isInsideDoorway(x, z)) {
         walkable[r][c] = true;
         continue;
       }
 
-      // Check wall proximity
       if (isNearWallEdge(x, z, room)) {
         walkable[r][c] = false;
         continue;
       }
 
-      // Check furniture obstacle
       if (collidesWithFurniture(x, z, room)) {
         walkable[r][c] = false;
         continue;
