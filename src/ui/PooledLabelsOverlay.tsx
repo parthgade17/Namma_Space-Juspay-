@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import * as THREE from 'three';
 import { useStore } from '../state/useStore';
 import { ALL_POIS } from '../data/poiDatabase';
@@ -29,27 +29,22 @@ export const PooledLabelsOverlay: React.FC<Props> = ({ sceneRef }) => {
   const setSelectedObject = useStore((s) => s.setSelectedObject);
 
   const [activeLabels, setActiveLabels] = useState<ProjectedLabel[]>([]);
+  const prevLabelsRef = useRef<string>('');
 
   useEffect(() => {
     if (!showLabels || isAlignMode || isTopDownView) {
       if (activeLabels.length > 0) setActiveLabels([]);
+      prevLabelsRef.current = '';
       return;
     }
 
-    let animId: number;
-    const updateProjections = () => {
+    // Run at a throttled 10 Hz (every 100ms) to prevent starving main thread
+    const interval = setInterval(() => {
       const scene = sceneRef?.current;
-      if (!scene) {
-        animId = requestAnimationFrame(updateProjections);
-        return;
-      }
+      if (!scene) return;
 
-      // Find camera in scene
       const camera = scene.children.find((c: any) => c.isCamera) || (scene as any).__r3f?.camera;
-      if (!camera) {
-        animId = requestAnimationFrame(updateProjections);
-        return;
-      }
+      if (!camera) return;
 
       const width = window.innerWidth;
       const height = window.innerHeight;
@@ -78,7 +73,6 @@ export const PooledLabelsOverlay: React.FC<Props> = ({ sceneRef }) => {
         }
       }
 
-      // Sort by proximity and take closest candidates
       candidates.sort((a, b) => a.dist - b.dist);
       const visible: ProjectedLabel[] = [];
 
@@ -87,17 +81,13 @@ export const PooledLabelsOverlay: React.FC<Props> = ({ sceneRef }) => {
         tempVec.set(c.worldPos[0], c.worldPos[1], c.worldPos[2]);
         tempVec.project(camera);
 
-        // Must be in front of the camera
         if (tempVec.z > -1 && tempVec.z < 1) {
           const sx = (tempVec.x * 0.5 + 0.5) * width;
           const sy = (-tempVec.y * 0.5 + 0.5) * height;
 
-          // Check screen bounds
           if (sx >= 40 && sx <= width - 40 && sy >= 60 && sy <= height - 60) {
-            // Never cover the exact screen center crosshair (within 55px radius)
             const distCenter = Math.hypot(sx - centerX, sy - centerY);
             if (distCenter > 55) {
-              // Fade calculation
               let opacity = 1.0;
               if (c.dist < 3.5) {
                 opacity = (c.dist - 2.0) / 1.5;
@@ -113,7 +103,7 @@ export const PooledLabelsOverlay: React.FC<Props> = ({ sceneRef }) => {
                 type: c.poi.category.toUpperCase(),
                 screenX: Math.round(sx),
                 screenY: Math.round(sy),
-                opacity,
+                opacity: Math.round(opacity * 10) / 10,
                 position: c.worldPos,
               });
             }
@@ -121,12 +111,15 @@ export const PooledLabelsOverlay: React.FC<Props> = ({ sceneRef }) => {
         }
       }
 
-      setActiveLabels(visible);
-      animId = requestAnimationFrame(updateProjections);
-    };
+      // Only trigger React state update if key positions or IDs changed
+      const signature = visible.map((v) => `${v.id}:${Math.round(v.screenX / 4)}:${Math.round(v.screenY / 4)}`).join('|');
+      if (signature !== prevLabelsRef.current) {
+        prevLabelsRef.current = signature;
+        setActiveLabels(visible);
+      }
+    }, 100);
 
-    animId = requestAnimationFrame(updateProjections);
-    return () => cancelAnimationFrame(animId);
+    return () => clearInterval(interval);
   }, [showLabels, isAlignMode, isTopDownView, userPosition, floorPlanTransform, sceneRef]);
 
   if (!showLabels || isAlignMode || isTopDownView || activeLabels.length === 0) {
@@ -152,9 +145,9 @@ export const PooledLabelsOverlay: React.FC<Props> = ({ sceneRef }) => {
               position: lbl.position,
             });
           }}
-          className="absolute pointer-events-auto cursor-pointer transition-opacity duration-200 select-none group"
+          className="absolute pointer-events-auto cursor-pointer select-none group"
         >
-          <div className="px-2 py-0.5 rounded-full bg-[rgba(15,17,20,0.7)] backdrop-blur-md border border-white/10 text-slate-200 text-[11px] font-sans font-medium shadow-md group-hover:border-cyan-400 group-hover:text-white group-hover:scale-105 transition-all flex items-center gap-1.5 whitespace-nowrap">
+          <div className="px-2.5 py-1 rounded-full bg-[rgba(15,17,20,0.75)] backdrop-blur-md border border-white/10 text-slate-200 text-[11px] font-sans font-medium shadow-md group-hover:border-cyan-400 group-hover:text-white group-hover:scale-105 transition-all flex items-center gap-1.5 whitespace-nowrap">
             <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 shrink-0" />
             <span className="leading-tight">{lbl.name}</span>
           </div>

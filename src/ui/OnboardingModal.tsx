@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Eye, Footprints, Search, ArrowRight, Check } from 'lucide-react';
+import { Eye, Footprints, Search, ArrowRight, Check, X } from 'lucide-react';
 
 export const OnboardingModal: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -20,9 +20,14 @@ export const OnboardingModal: React.FC = () => {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="w-full max-w-md rounded-2xl bg-[rgba(15,17,20,0.88)] backdrop-blur-xl border border-white/10 shadow-2xl p-6 text-slate-100 flex flex-col gap-5">
-        
+    <div
+      onClick={handleFinish}
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200"
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="w-full max-w-md rounded-2xl bg-[rgba(15,17,20,0.92)] backdrop-blur-xl border border-white/10 shadow-2xl p-6 text-slate-100 flex flex-col gap-5 relative select-none pointer-events-auto"
+      >
         {/* Header */}
         <div className="flex items-center justify-between border-b border-white/10 pb-3">
           <div className="flex items-center gap-2">
@@ -31,7 +36,16 @@ export const OnboardingModal: React.FC = () => {
               Welcome to <span className="text-cyan-400">Raasta 3D</span>
             </h2>
           </div>
-          <span className="text-xs text-slate-400 font-mono">Step {step} of 3</span>
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-slate-400 font-mono">Step {step} of 3</span>
+            <button
+              onClick={handleFinish}
+              className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-white/10 transition-colors ml-1 cursor-pointer"
+              title="Close guide"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
         </div>
 
         {/* Steps Content */}
@@ -73,18 +87,27 @@ export const OnboardingModal: React.FC = () => {
 
         {/* Progress dots & buttons */}
         <div className="flex items-center justify-between pt-2 border-t border-white/10">
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-2">
             {[1, 2, 3].map((s) => (
-              <span
+              <button
                 key={s}
-                className={`h-1.5 rounded-full transition-all ${
-                  s === step ? 'w-6 bg-cyan-400' : 'w-2 bg-white/20'
+                onClick={() => setStep(s)}
+                className={`h-1.5 rounded-full transition-all cursor-pointer ${
+                  s === step ? 'w-6 bg-cyan-400' : 'w-2 bg-white/20 hover:bg-white/40'
                 }`}
+                title={`Jump to step ${s}`}
               />
             ))}
           </div>
 
           <div className="flex items-center gap-2">
+            <button
+              onClick={handleFinish}
+              className="px-3 py-1.5 rounded-xl text-xs text-slate-400 hover:text-white transition-colors cursor-pointer"
+            >
+              Skip
+            </button>
+
             {step < 3 ? (
               <button
                 onClick={() => setStep(step + 1)}

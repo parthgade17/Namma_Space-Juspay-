@@ -1,6 +1,6 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, Suspense } from 'react';
 import { Canvas, useThree, useFrame } from '@react-three/fiber';
-import { Environment, OrbitControls } from '@react-three/drei';
+import { OrbitControls } from '@react-three/drei';
 import { Perf } from 'r3f-perf';
 import * as THREE from 'three';
 import { useStore } from '../state/useStore';
@@ -23,16 +23,17 @@ const SceneBridge: React.FC<{ sceneRef?: React.MutableRefObject<any> }> = ({ sce
 
   useAutoWalkController();
 
-  // Bind scene ref
   useEffect(() => {
     if (sceneRef) {
       sceneRef.current = scene;
     }
   }, [scene, sceneRef]);
 
-  // Freeze shadow map after initial frame to save massive render costs
+  // Gracefully freeze shadow maps after 5 frames to let meshes mount properly
+  const shadowFrames = useRef(0);
   useEffect(() => {
-    gl.shadowMap.autoUpdate = false;
+    shadowFrames.current = 0;
+    gl.shadowMap.autoUpdate = true;
     gl.shadowMap.needsUpdate = true;
   }, [gl, viewMode, quality]);
 
@@ -41,6 +42,15 @@ const SceneBridge: React.FC<{ sceneRef?: React.MutableRefObject<any> }> = ({ sce
   const lastCheck = useRef(performance.now());
 
   useFrame(() => {
+    // Freeze shadow map after initial frames
+    if (shadowFrames.current < 5) {
+      shadowFrames.current++;
+      gl.shadowMap.needsUpdate = true;
+      if (shadowFrames.current >= 5) {
+        gl.shadowMap.autoUpdate = false;
+      }
+    }
+
     frameCount.current++;
     const now = performance.now();
     if (now - lastCheck.current >= 1500) {
@@ -160,7 +170,7 @@ export const SceneContainer: React.FC<Props> = ({ sceneRef }) => {
           antialias: viewMode === 'mesh',
           powerPreference: 'high-performance',
           toneMapping: THREE.ACESFilmicToneMapping,
-          toneMappingExposure: 1.1,
+          toneMappingExposure: 1.15,
         }}
         camera={{
           fov: scanConfig.fov || 65,
@@ -169,59 +179,72 @@ export const SceneContainer: React.FC<Props> = ({ sceneRef }) => {
           position: [scanConfig.start?.[0] || -4.0, scanConfig.eyeHeight || 1.6, scanConfig.start?.[1] || 0],
         }}
       >
-        <SceneBridge sceneRef={sceneRef} />
+        <Suspense fallback={null}>
+          <SceneBridge sceneRef={sceneRef} />
 
-        {/* 1. PROFESSIONAL ARCHITECTURAL LIGHTING */}
-        {showMesh && (
-          <group>
-            {/* Ambient cool fill */}
-            <ambientLight intensity={0.48} color="#f0f9ff" />
+          {/* 1. PROFESSIONAL ARCHITECTURAL LIGHTING (OFFLINE, ZERO NETWORK DEPENDENCY) */}
+          {showMesh && (
+            <group>
+              {/* Cool ambient illumination */}
+              <ambientLight intensity={0.75} color="#f8fafc" />
 
-            {/* Single Sun Directional Light with Frozen 1024 Shadow Map */}
-            <directionalLight
-              position={[8, 11, 7]}
-              intensity={0.65}
-              color="#fff8ee"
-              castShadow={quality !== 'low'}
-              shadow-mapSize-width={1024}
-              shadow-mapSize-height={1024}
-              shadow-camera-near={1}
-              shadow-camera-far={35}
-              shadow-camera-left={-12}
-              shadow-camera-right={12}
-              shadow-camera-top={10}
-              shadow-camera-bottom={-10}
-              shadow-bias={-0.0003}
-            />
+              {/* Natural skylight & floor bounce fill */}
+              <hemisphereLight
+                color="#e0f2fe"
+                groundColor="#334155"
+                intensity={0.65}
+              />
 
-            {/* Poly Haven Indoor Reflection Environment */}
-            <Environment preset="city" environmentIntensity={0.25} />
-          </group>
-        )}
+              {/* Single Sun Directional Light with 1024 Shadow Map */}
+              <directionalLight
+                position={[8, 12, 8]}
+                intensity={1.1}
+                color="#fffbeb"
+                castShadow={quality !== 'low'}
+                shadow-mapSize-width={1024}
+                shadow-mapSize-height={1024}
+                shadow-camera-near={1}
+                shadow-camera-far={35}
+                shadow-camera-left={-12}
+                shadow-camera-right={12}
+                shadow-camera-top={10}
+                shadow-camera-bottom={-10}
+                shadow-bias={-0.0003}
+              />
 
-        {/* 2. REAL LAB 3D ARCHITECTURAL MESH MODEL */}
-        {showMesh && <RealLabMeshModel />}
+              {/* Soft interior fill from hallway */}
+              <directionalLight
+                position={[-8, 6, -6]}
+                intensity={0.4}
+                color="#f0f9ff"
+              />
+            </group>
+          )}
 
-        {/* 3. GAUSSIAN SPLATTING SCAN */}
-        {showSplat && <GaussianSplatScene />}
+          {/* 2. REAL LAB 3D ARCHITECTURAL MESH MODEL */}
+          {showMesh && <RealLabMeshModel />}
 
-        {/* 4. NAVIGATION ROUTE RIBBON */}
-        <RoutePathVisualizer />
+          {/* 3. GAUSSIAN SPLATTING SCAN */}
+          {showSplat && <GaussianSplatScene />}
 
-        {/* 5. INTERACTIVE FLOOR CLICK-TO-WALK PLANE */}
-        <FloorWalkTarget />
+          {/* 4. NAVIGATION ROUTE RIBBON */}
+          <RoutePathVisualizer />
 
-        {/* 6. CAMERA ROAMING & CONTROLS */}
-        {isAlignMode ? (
-          <AlignModeControls />
-        ) : isTopDownView ? (
-          <TopDownPlanControls />
-        ) : (
-          <FirstPersonControls />
-        )}
+          {/* 5. INTERACTIVE FLOOR CLICK-TO-WALK PLANE */}
+          <FloorWalkTarget />
 
-        {/* 7. PERFORMANCE PROFILER (r3f-perf) */}
-        {showPerf && <Perf position="bottom-left" minimal={true} />}
+          {/* 6. CAMERA ROAMING & CONTROLS */}
+          {isAlignMode ? (
+            <AlignModeControls />
+          ) : isTopDownView ? (
+            <TopDownPlanControls />
+          ) : (
+            <FirstPersonControls />
+          )}
+
+          {/* 7. PERFORMANCE PROFILER (r3f-perf) */}
+          {showPerf && <Perf position="bottom-left" minimal={true} />}
+        </Suspense>
       </Canvas>
 
       {/* 8. HIGH-PERFORMANCE POOLED DOM LABELS (OUTSIDE CANVAS) */}
