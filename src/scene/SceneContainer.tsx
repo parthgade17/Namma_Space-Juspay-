@@ -7,6 +7,7 @@ import { useStore } from '../state/useStore';
 import { RealLabMeshModel } from './RealLabMeshModel';
 import { GaussianSplatScene } from './GaussianSplatScene';
 import { RoutePathVisualizer } from '../navigation/RoutePathVisualizer';
+import { NavigationPuck } from './NavigationPuck';
 import { FirstPersonControls } from '../roaming/FirstPersonControls';
 import { AlignModeControls } from './AlignModeControls';
 import { useAutoWalkController } from '../navigation/autoWalk';
@@ -227,8 +228,9 @@ export const SceneContainer: React.FC<Props> = ({ sceneRef }) => {
           {/* 3. GAUSSIAN SPLATTING SCAN */}
           {showSplat && <GaussianSplatScene />}
 
-          {/* 4. NAVIGATION ROUTE RIBBON */}
+          {/* 4. NAVIGATION ROUTE RIBBON & 3D WALKING PUCK */}
           <RoutePathVisualizer />
+          <NavigationPuck />
 
           {/* 5. INTERACTIVE FLOOR CLICK-TO-WALK PLANE */}
           <FloorWalkTarget />

@@ -4,8 +4,8 @@ import * as THREE from 'three';
 import { useStore } from '../state/useStore';
 import confetti from 'canvas-confetti';
 
-// Real-world human indoor walking pace: 1.3 meters / second (~4.7 km/h)
-const REAL_HUMAN_WALKING_SPEED = 1.3;
+// Real-world human indoor walking pace: 1.45 meters / second (~5.2 km/h)
+const REAL_HUMAN_WALKING_SPEED = 1.45;
 
 export function useAutoWalkController() {
   const isAutoWalking = useStore((s) => s.isAutoWalking);
@@ -51,8 +51,8 @@ export function useAutoWalkController() {
     // Natural human acceleration (ease-in) and deceleration (ease-out)
     const distWalked = pathProgressRef.current * totalLength;
     const distRemaining = (1.0 - pathProgressRef.current) * totalLength;
-    const accelFactor = Math.min(1.0, Math.max(0.35, distWalked / 0.8));
-    const decelFactor = Math.min(1.0, Math.max(0.3, distRemaining / 0.8));
+    const accelFactor = Math.min(1.0, Math.max(0.65, distWalked / 0.5));
+    const decelFactor = Math.min(1.0, Math.max(0.6, distRemaining / 0.5));
     const currentSpeed = REAL_HUMAN_WALKING_SPEED * Math.min(accelFactor, decelFactor);
 
     // Increment progress by exact human metric distance traveled in delta seconds

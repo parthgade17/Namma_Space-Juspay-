@@ -11,6 +11,7 @@ export const Minimap: React.FC = () => {
   const userPosition = useStore((s) => s.userPosition);
   const userRotation = useStore((s) => s.userRotation);
   const activePath = useStore((s) => s.activePath);
+  const isAutoWalking = useStore((s) => s.isAutoWalking);
   const isEmergency = useStore((s) => s.isEmergency);
   const setDestination = useStore((s) => s.setDestination);
   const setNavigationRoute = useStore((s) => s.setNavigationRoute);
@@ -190,6 +191,15 @@ export const Minimap: React.FC = () => {
       ctx.closePath();
       ctx.fill();
 
+      // Walking pulse wave indicator
+      if (isAutoWalking) {
+        ctx.strokeStyle = '#22d3ee';
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.arc(cx, cy, 12, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+
       // Outer border ring
       ctx.strokeStyle = 'rgba(255, 255, 255, 0.12)';
       ctx.lineWidth = 2;
@@ -197,7 +207,7 @@ export const Minimap: React.FC = () => {
       ctx.arc(cx, cy, radius, 0, Math.PI * 2);
       ctx.stroke();
     }
-  }, [userPosition, userRotation, activePath, isEmergency, isExpanded]);
+  }, [userPosition, userRotation, activePath, isEmergency, isExpanded, isAutoWalking]);
 
   // Click on expanded map to navigate to clicked room / spot
   const handleMapClick = (e: React.MouseEvent<HTMLCanvasElement>) => {

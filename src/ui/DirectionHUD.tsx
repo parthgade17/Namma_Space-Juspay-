@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { useStore } from '../state/useStore';
 import {
   Navigation,
@@ -11,7 +11,7 @@ import {
   Clock,
   X,
   AlertTriangle,
-  ChevronDown,
+  Footprints,
 } from 'lucide-react';
 
 export const DirectionHUD: React.FC = () => {
@@ -23,6 +23,36 @@ export const DirectionHUD: React.FC = () => {
   const setIsAutoWalking = useStore((s) => s.setIsAutoWalking);
   const clearNavigation = useStore((s) => s.clearNavigation);
   const isEmergency = useStore((s) => s.isEmergency);
+  const userPosition = useStore((s) => s.userPosition);
+  const activePath = useStore((s) => s.activePath);
+
+  // Real-time dynamic distance & estimated time countdown matching real walking speed
+  const { liveRemainingDistance, liveRemainingSeconds } = useMemo(() => {
+    if (activePath.length < 2) {
+      return { liveRemainingDistance: totalPathDistance, liveRemainingSeconds: estimatedTimeSeconds };
+    }
+
+    // Find nearest segment index on activePath to current userPosition
+    let closestIndex = 0;
+    let minD = Infinity;
+    for (let i = 0; i < activePath.length; i++) {
+      const d = Math.hypot(userPosition[0] - activePath[i][0], userPosition[2] - activePath[i][2]);
+      if (d < minD) {
+        minD = d;
+        closestIndex = i;
+      }
+    }
+
+    // Accumulate metric distance along remaining segments
+    let remDist = Math.hypot(userPosition[0] - activePath[closestIndex][0], userPosition[2] - activePath[closestIndex][2]);
+    for (let i = closestIndex; i < activePath.length - 1; i++) {
+      remDist += Math.hypot(activePath[i + 1][0] - activePath[i][0], activePath[i + 1][2] - activePath[i][2]);
+    }
+
+    const roundedDist = Math.max(0.1, Math.round(remDist * 10) / 10);
+    const roundedSec = Math.max(1, Math.ceil(roundedDist / 1.45));
+    return { liveRemainingDistance: roundedDist, liveRemainingSeconds: roundedSec };
+  }, [userPosition, activePath, totalPathDistance, estimatedTimeSeconds]);
 
   if (!activeDestination || activeTurnDirections.length === 0) return null;
 
@@ -41,19 +71,34 @@ export const DirectionHUD: React.FC = () => {
     }
   };
 
-  // 1. COLLAPSED WALKING PILL WHILE WALKING
+  // 1. COLLAPSED WALKING PILL WHILE ACTIVELY WALKING
   if (isAutoWalking) {
     return (
       <div className="absolute top-24 left-1/2 -translate-x-1/2 z-30 select-none pointer-events-auto animate-in fade-in slide-in-from-top-2 duration-150">
-        <div className="flex items-center gap-3 px-3.5 py-1.5 rounded-full bg-[rgba(15,17,20,0.75)] backdrop-blur-md border border-cyan-500/30 shadow-xl text-xs">
-          <div className="flex items-center gap-2 text-cyan-400 font-semibold">
-            <span className="w-2 h-2 rounded-full bg-cyan-400 animate-ping" />
-            <span>Walking to {activeDestination.name}</span>
+        <div className="flex items-center gap-3 px-4 py-2 rounded-full bg-[rgba(15,17,20,0.85)] backdrop-blur-xl border border-cyan-500/40 shadow-2xl shadow-cyan-500/10 text-xs">
+          
+          {/* Animated Walking Man Badge */}
+          <div className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-cyan-500/20 border border-cyan-500/30 text-cyan-300 font-bold">
+            <Footprints className="w-3.5 h-3.5 text-cyan-400 animate-bounce" />
+            <span className="text-[11px] tracking-wide uppercase">WALKING</span>
+            <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-ping ml-0.5" />
           </div>
-          <span className="text-slate-400 font-mono text-[11px]">• {totalPathDistance}m • {estimatedTimeSeconds}s</span>
+
+          <div className="flex items-center gap-1 text-white font-semibold text-xs">
+            <span>to</span>
+            <span className="text-cyan-400 font-bold truncate max-w-[140px]">{activeDestination.name}</span>
+          </div>
+
+          {/* Dynamic real-time ticking distance & time */}
+          <div className="flex items-center gap-1.5 font-mono text-[11px] text-slate-300 bg-black/40 px-2 py-0.5 rounded-lg border border-white/5">
+            <span className="text-cyan-400 font-bold">{liveRemainingDistance}m</span>
+            <span className="text-slate-500">•</span>
+            <span className="text-slate-200">{liveRemainingSeconds}s</span>
+          </div>
+
           <button
             onClick={() => setIsAutoWalking(false)}
-            className="flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-[11px] transition-all ml-1"
+            className="flex items-center gap-1 px-3 py-1 rounded-full bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-[11px] transition-all ml-1 cursor-pointer shadow"
           >
             <Square className="w-3 h-3 fill-slate-950" /> Pause
           </button>
@@ -69,7 +114,7 @@ export const DirectionHUD: React.FC = () => {
         className={`rounded-2xl p-4 shadow-2xl border transition-all ${
           isEmergency
             ? 'bg-[rgba(35,12,16,0.85)] border-red-500/40 backdrop-blur-md'
-            : 'bg-[rgba(15,17,20,0.7)] border-white/10 backdrop-blur-md'
+            : 'bg-[rgba(15,17,20,0.75)] border-white/10 backdrop-blur-md'
         }`}
       >
         {/* Destination Header */}
@@ -94,7 +139,7 @@ export const DirectionHUD: React.FC = () => {
 
           <button
             onClick={clearNavigation}
-            className="p-1 rounded-lg hover:bg-white/10 text-slate-400 hover:text-white transition-colors"
+            className="p-1 rounded-lg hover:bg-white/10 text-slate-400 hover:text-white transition-colors cursor-pointer"
             title="Cancel route"
           >
             <X className="w-4 h-4" />
@@ -112,7 +157,7 @@ export const DirectionHUD: React.FC = () => {
             </div>
             {currentStep?.distance > 0 && (
               <div className="text-[10px] text-cyan-400 font-mono">
-                {currentStep.distance} m ahead
+                {liveRemainingDistance} m remaining
               </div>
             )}
           </div>
@@ -123,14 +168,14 @@ export const DirectionHUD: React.FC = () => {
           <div className="flex items-center gap-3 text-xs font-mono">
             <div>
               <span className="text-[10px] text-slate-400 block uppercase">Dist</span>
-              <span className="text-cyan-400 font-bold text-xs">{totalPathDistance}m</span>
+              <span className="text-cyan-400 font-bold text-xs">{liveRemainingDistance}m</span>
             </div>
             <div className="h-5 w-px bg-white/10" />
             <div>
               <span className="text-[10px] text-slate-400 block uppercase">Time</span>
               <span className="text-slate-200 font-bold text-xs flex items-center gap-1">
                 <Clock className="w-3 h-3 text-cyan-400" />
-                {estimatedTimeSeconds}s
+                {liveRemainingSeconds}s
               </span>
             </div>
           </div>
@@ -140,7 +185,7 @@ export const DirectionHUD: React.FC = () => {
             className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-xs shadow-lg shadow-cyan-500/20 hover:scale-105 transition-all cursor-pointer"
           >
             <Play className="w-3.5 h-3.5 fill-slate-950" />
-            Start
+            Start Walking
           </button>
         </div>
       </div>
