@@ -124,7 +124,7 @@ const DEFAULT_CONFIG: ScanConfig = {
   start: [-4.0, 0], // Start inside the central corridor near workshop & entrance
   startYaw: 90,     // Facing down the corridor
   bounds: { minX: -9.5, maxX: 8.5, minZ: -5.8, maxZ: 5.5 },
-  speed: 1.6,
+  speed: 1.3,
   near: 0.25,
   fov: 65,
 };
