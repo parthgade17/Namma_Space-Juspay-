@@ -4,7 +4,7 @@ import * as THREE from 'three';
 const textureCache = new Map<string, THREE.CanvasTexture>();
 
 /**
- * 600x600 light grey vitrified tiles with thin grout lines and slight gloss
+ * 600x600 light grey vitrified tiles with faint grout lines, baked ambient occlusion, and roughness 0.35
  */
 export function getFloorTileTexture(): THREE.CanvasTexture {
   if (textureCache.has('floor')) return textureCache.get('floor')!;
@@ -15,24 +15,25 @@ export function getFloorTileTexture(): THREE.CanvasTexture {
   canvas.height = size;
   const ctx = canvas.getContext('2d')!;
 
-  // Light grey base with subtle marble/concrete grain
-  ctx.fillStyle = '#dcdfe4';
+  // Smooth light grey base (hex #d8dcde)
+  ctx.fillStyle = '#d8dcde';
   ctx.fillRect(0, 0, size, size);
 
-  // Subtle tonal noise
-  for (let i = 0; i < 40000; i++) {
-    const x = Math.random() * size;
-    const y = Math.random() * size;
-    const alpha = Math.random() * 0.035;
-    ctx.fillStyle = Math.random() > 0.5 ? `rgba(255,255,255,${alpha})` : `rgba(0,0,0,${alpha})`;
-    ctx.fillRect(x, y, 2, 2);
+  // Micro-granular polished ceramic grain
+  const imgData = ctx.getImageData(0, 0, size, size);
+  const data = imgData.data;
+  for (let i = 0; i < data.length; i += 4) {
+    const noise = (Math.random() - 0.5) * 8;
+    data[i] = Math.min(255, Math.max(0, data[i] + noise));
+    data[i + 1] = Math.min(255, Math.max(0, data[i + 1] + noise));
+    data[i + 2] = Math.min(255, Math.max(0, data[i + 2] + noise));
   }
+  ctx.putImageData(imgData, 0, 0);
 
-  // Draw 2x2 grid representing four 600x600mm tiles
-  ctx.strokeStyle = 'rgba(70, 75, 85, 0.45)';
-  ctx.lineWidth = 4;
+  // Faint clean grout lines (2mm grout)
+  ctx.strokeStyle = 'rgba(110, 115, 125, 0.45)';
+  ctx.lineWidth = 3;
 
-  // Outer border & cross
   ctx.strokeRect(0, 0, size, size);
   ctx.beginPath();
   ctx.moveTo(size / 2, 0);
@@ -41,22 +42,139 @@ export function getFloorTileTexture(): THREE.CanvasTexture {
   ctx.lineTo(size, size / 2);
   ctx.stroke();
 
-  // Highlight along tile edge for bevelled appearance
-  ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
-  ctx.lineWidth = 2;
+  // Subtle bevel specular highlight along grout borders
+  ctx.strokeStyle = 'rgba(255, 255, 255, 0.25)';
+  ctx.lineWidth = 1.5;
   ctx.beginPath();
-  ctx.moveTo(size / 2 + 3, 0);
-  ctx.lineTo(size / 2 + 3, size);
-  ctx.moveTo(0, size / 2 + 3);
-  ctx.lineTo(size, size / 2 + 3);
+  ctx.moveTo(size / 2 + 2, 0);
+  ctx.lineTo(size / 2 + 2, size);
+  ctx.moveTo(0, size / 2 + 2);
+  ctx.lineTo(size, size / 2 + 2);
   ctx.stroke();
 
   const tex = new THREE.CanvasTexture(canvas);
   tex.wrapS = THREE.RepeatWrapping;
   tex.wrapT = THREE.RepeatWrapping;
-  tex.repeat.set(6, 4); // Repeat to scale 600mm tiles accurately
+  tex.repeat.set(7, 5); // Accurate 600mm metric scale across lab
   tex.anisotropy = 8;
   textureCache.set('floor', tex);
+  return tex;
+}
+
+/**
+ * Off-white architectural plaster with very slight tonal variation & fine stipple
+ */
+export function getWallPlasterTexture(): THREE.CanvasTexture {
+  if (textureCache.has('wall')) return textureCache.get('wall')!;
+
+  const size = 512;
+  const canvas = document.createElement('canvas');
+  canvas.width = size;
+  canvas.height = size;
+  const ctx = canvas.getContext('2d')!;
+
+  ctx.fillStyle = '#f4f5f6';
+  ctx.fillRect(0, 0, size, size);
+
+  // Very gentle plaster stipple
+  for (let i = 0; i < 25000; i++) {
+    const x = Math.random() * size;
+    const y = Math.random() * size;
+    const alpha = Math.random() * 0.03;
+    ctx.fillStyle = Math.random() > 0.5 ? `rgba(255,255,255,${alpha})` : `rgba(0,0,0,${alpha})`;
+    ctx.fillRect(x, y, 1.5, 1.5);
+  }
+
+  const tex = new THREE.CanvasTexture(canvas);
+  tex.wrapS = THREE.RepeatWrapping;
+  tex.wrapT = THREE.RepeatWrapping;
+  tex.repeat.set(4, 2);
+  textureCache.set('wall', tex);
+  return tex;
+}
+
+/**
+ * White mineral-fibre acoustic ceiling tile grid (600x600 mm) with recessed panel edges
+ */
+export function getCeilingGridTexture(): THREE.CanvasTexture {
+  if (textureCache.has('ceiling')) return textureCache.get('ceiling')!;
+
+  const size = 512;
+  const canvas = document.createElement('canvas');
+  canvas.width = size;
+  canvas.height = size;
+  const ctx = canvas.getContext('2d')!;
+
+  // Mineral-fibre off-white
+  ctx.fillStyle = '#f8fafc';
+  ctx.fillRect(0, 0, size, size);
+
+  // Subtle acoustic pin-hole fissures
+  ctx.fillStyle = 'rgba(100, 116, 139, 0.12)';
+  for (let i = 0; i < 3000; i++) {
+    const x = Math.random() * size;
+    const y = Math.random() * size;
+    ctx.beginPath();
+    ctx.arc(x, y, Math.random() * 1.5, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  // T-bar grid frame (white painted aluminium grid)
+  ctx.strokeStyle = '#cbd5e1';
+  ctx.lineWidth = 4;
+  ctx.strokeRect(0, 0, size, size);
+
+  // Inner tile shadow for recessed acoustic look
+  ctx.strokeStyle = 'rgba(0, 0, 0, 0.06)';
+  ctx.lineWidth = 2;
+  ctx.strokeRect(3, 3, size - 6, size - 6);
+
+  const tex = new THREE.CanvasTexture(canvas);
+  tex.wrapS = THREE.RepeatWrapping;
+  tex.wrapT = THREE.RepeatWrapping;
+  tex.repeat.set(12, 8);
+  textureCache.set('ceiling', tex);
+  return tex;
+}
+
+/**
+ * Oak laminate desk wood grain texture with realistic fiber banding
+ */
+export function getDeskWoodTexture(): THREE.CanvasTexture {
+  if (textureCache.has('oak_wood')) return textureCache.get('oak_wood')!;
+
+  const w = 512;
+  const h = 256;
+  const canvas = document.createElement('canvas');
+  canvas.width = w;
+  canvas.height = h;
+  const ctx = canvas.getContext('2d')!;
+
+  // Warm light oak base
+  ctx.fillStyle = '#dfc4a2';
+  ctx.fillRect(0, 0, w, h);
+
+  // Horizontal wood grain fibers & growth rings
+  for (let y = 0; y < h; y += 2) {
+    const wave = Math.sin(y * 0.08) * 3 + Math.sin(y * 0.02) * 5;
+    const alpha = (Math.sin(y * 0.2 + wave) * 0.5 + 0.5) * 0.12;
+    ctx.fillStyle = `rgba(146, 94, 46, ${alpha})`;
+    ctx.fillRect(0, y, w, 2);
+  }
+
+  // Fine fiber noise
+  for (let i = 0; i < 6000; i++) {
+    const x = Math.random() * w;
+    const y = Math.random() * h;
+    ctx.fillStyle = 'rgba(100, 60, 20, 0.08)';
+    ctx.fillRect(x, y, 12, 1);
+  }
+
+  const tex = new THREE.CanvasTexture(canvas);
+  tex.wrapS = THREE.RepeatWrapping;
+  tex.wrapT = THREE.RepeatWrapping;
+  tex.repeat.set(3, 1);
+  textureCache.set('oak_wood', tex);
   return tex;
 }
 
@@ -348,59 +466,37 @@ export function getPowerSocketsTexture(): THREE.CanvasTexture {
 }
 
 /**
- * Wall-mounted TV screen showing IIT Bombay Robotics / Spatial Engine dashboard
+ * Wall-mounted TV screen: plain dark glossy OLED screen with subtle glass reflection (no fake text)
  */
 export function getTVScreenTexture(): THREE.CanvasTexture {
   if (textureCache.has('tv')) return textureCache.get('tv')!;
 
-  const w = 1024;
-  const h = 576;
+  const w = 512;
+  const h = 288;
   const canvas = document.createElement('canvas');
   canvas.width = w;
   canvas.height = h;
   const ctx = canvas.getContext('2d')!;
 
-  // Dark cyber-dashboard
-  ctx.fillStyle = '#0a0d14';
+  // Deep pitch black glass
+  ctx.fillStyle = '#05070a';
   ctx.fillRect(0, 0, w, h);
 
-  // Top header bar
-  ctx.fillStyle = '#0f172a';
-  ctx.fillRect(0, 0, w, 70);
+  // Subtle diagonal gloss reflection sheen
+  const grad = ctx.createLinearGradient(0, 0, w, h);
+  grad.addColorStop(0, 'rgba(255, 255, 255, 0.08)');
+  grad.addColorStop(0.3, 'rgba(255, 255, 255, 0.03)');
+  grad.addColorStop(0.5, 'rgba(255, 255, 255, 0.0)');
+  grad.addColorStop(0.8, 'rgba(255, 255, 255, 0.02)');
+  grad.addColorStop(1, 'rgba(255, 255, 255, 0.05)');
 
-  ctx.fillStyle = '#22d3ee';
-  ctx.font = 'bold 28px Inter, sans-serif';
-  ctx.textAlign = 'left';
-  ctx.fillText('RAASTA 3D — SPATIAL DIGITAL TWIN LAB', 30, 46);
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, w, h);
 
-  ctx.fillStyle = '#10b981';
-  ctx.font = '16px monospace';
-  ctx.textAlign = 'right';
-  ctx.fillText('LIVE STATUS: ALL SYSTEMS NORMAL', w - 30, 46);
-
-  // Telemetry widgets
-  ctx.fillStyle = '#1e293b';
-  ctx.fillRect(30, 100, 460, 200);
-  ctx.fillRect(520, 100, 470, 200);
-  ctx.fillRect(30, 330, 960, 210);
-
-  ctx.fillStyle = '#94a3b8';
-  ctx.font = '16px Inter, sans-serif';
-  ctx.textAlign = 'left';
-  ctx.fillText('MECHANICAL & ROBOTICS WORKBENCHES', 50, 135);
-  ctx.fillText('ELECTRONICS TESTING & EMBEDDED RACKS', 540, 135);
-  ctx.fillText('CAMPUS SPATIAL TWIN & A* INDOOR NAVIGATION', 50, 365);
-
-  // Waveform graph
-  ctx.strokeStyle = '#22d3ee';
-  ctx.lineWidth = 3;
-  ctx.beginPath();
-  for (let x = 50; x < 450; x += 10) {
-    const y = 220 + Math.sin(x * 0.05) * 40;
-    if (x === 50) ctx.moveTo(x, y);
-    else ctx.lineTo(x, y);
-  }
-  ctx.stroke();
+  // Subtle inner border reflection
+  ctx.strokeStyle = 'rgba(255, 255, 255, 0.07)';
+  ctx.lineWidth = 2;
+  ctx.strokeRect(1, 1, w - 2, h - 2);
 
   const tex = new THREE.CanvasTexture(canvas);
   textureCache.set('tv', tex);

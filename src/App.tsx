@@ -4,7 +4,10 @@ import { SceneContainer } from './scene/SceneContainer';
 import { TopNavBar } from './ui/TopNavBar';
 import { Minimap } from './ui/Minimap';
 import { DirectionHUD } from './ui/DirectionHUD';
-import { ControlsOverlay } from './ui/ControlsOverlay';
+import { ArrivalToast } from './ui/ArrivalToast';
+import { BottomDock } from './ui/BottomDock';
+import { OnboardingModal } from './ui/OnboardingModal';
+import { ObjectInfoCard } from './ui/ObjectInfoCard';
 import { CalibrationPanel } from './ui/CalibrationPanel';
 import { FloorPlanAlignToolbar } from './ui/FloorPlanAlignToolbar';
 import { EmergencyOverlay } from './ui/EmergencyOverlay';
@@ -20,39 +23,48 @@ export function App() {
   return (
     <main className="relative w-screen h-screen overflow-hidden bg-[#0d1117] text-slate-100 font-sans select-none">
       
-      {/* 1. 3D WebGL Canvas Layer with Real Gaussian Splat */}
+      {/* 1. 3D WebGL Canvas Layer (3D Model / Real Scan / Navigation Ribbon / Pooled Labels) */}
       <SceneContainer sceneRef={sceneRef} />
 
-      {/* 2. Top Navigation Bar (Search, Real Pipeline, Align Mode, Emergency) */}
+      {/* 2. Top Navigation Bar: Top-Left View Switch, Top-Center Search with Chips, Top-Right Emergency */}
       <TopNavBar />
 
-      {/* 3. Turn-by-Turn Guidance HUD */}
+      {/* 3. Turn-by-Turn Compact Route Card / Collapsible Walking Pill */}
       <DirectionHUD />
 
-      {/* 4. Bottom Right: 2D Radar Minimap */}
+      {/* 4. Arrival Toast Feedback */}
+      <ArrivalToast />
+
+      {/* 5. Bottom Right: 2D Radar Minimap (Rounded, Rotates with Heading, Expandable) */}
       <div className="absolute bottom-4 right-4 z-30 pointer-events-auto">
         <Minimap />
       </div>
 
-      {/* 5. Bottom Left: Quality, Nav Layer Toggle, FPS Counter */}
-      <ControlsOverlay />
+      {/* 6. Bottom Dock: Destinations, Tour, Settings, Help */}
+      <BottomDock />
 
-      {/* 6. Calibration Panel (Press Key T) */}
+      {/* 7. First-Run 3-Step Onboarding Modal */}
+      <OnboardingModal />
+
+      {/* 8. Equipment & Room Inspection Card */}
+      <ObjectInfoCard />
+
+      {/* 9. Calibration Panel (Key T) */}
       <CalibrationPanel />
 
-      {/* 7. Floor Plan Alignment Toolbar (when in Align Mode) */}
-      <FloorPlanAlignToolbar />
+      {/* 10. Floor Plan Alignment Toolbar (when in Align Mode) */}
+      {isAlignMode && <FloorPlanAlignToolbar />}
 
-      {/* 8. Emergency Evacuation Alert */}
+      {/* 11. Emergency Evacuation Alert Vignette */}
       <EmergencyOverlay />
 
-      {/* 9. Mobile Touch Dual Joystick */}
+      {/* 12. Mobile Touch Dual Joystick */}
       <VirtualJoystick />
 
-      {/* 10. Splat Loading Progress Bar & Ready Card */}
+      {/* 13. Splat Loading Progress Bar (only during Real Scan load) */}
       <SplatLoadingOverlay />
 
-      {/* 11. Honest Reconstruction Pipeline Modal */}
+      {/* 14. Honest Reconstruction Pipeline Modal */}
       {currentMode === 'pipeline' && <ReconstructionScreen />}
 
     </main>

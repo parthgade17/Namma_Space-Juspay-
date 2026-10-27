@@ -1,9 +1,10 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import { useStore } from '../state/useStore';
 import floorPlanData from '../data/floorplan.json';
-import { Navigation, Maximize2, Minimize2 } from 'lucide-react';
-
-const floorPlan = floorPlanData;
+import { ALL_POIS } from '../data/poiDatabase';
+import { findPath } from '../navigation/astar';
+import { generateTurnDirections } from '../navigation/turnByTurn';
+import { Navigation, Maximize2, Minimize2, Map } from 'lucide-react';
 
 export const Minimap: React.FC = () => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -11,10 +12,22 @@ export const Minimap: React.FC = () => {
   const userRotation = useStore((s) => s.userRotation);
   const activePath = useStore((s) => s.activePath);
   const isEmergency = useStore((s) => s.isEmergency);
-  const setUserPosition = useStore((s) => s.setUserPosition);
-  const floorPlanTransform = useStore((s) => s.floorPlanTransform);
+  const setDestination = useStore((s) => s.setDestination);
+  const setNavigationRoute = useStore((s) => s.setNavigationRoute);
 
-  const [isExpanded, setIsExpanded] = React.useState(false);
+  const [isExpanded, setIsExpanded] = useState(false);
+
+  // Keyboard shortcut M: toggle map expand
+  useEffect(() => {
+    const handleKey = (e: KeyboardEvent) => {
+      if (['INPUT', 'TEXTAREA'].includes((e.target as HTMLElement)?.tagName)) return;
+      if (e.key === 'm' || e.key === 'M') {
+        setIsExpanded((prev) => !prev);
+      }
+    };
+    window.addEventListener('keydown', handleKey);
+    return () => window.removeEventListener('keydown', handleKey);
+  }, []);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -25,172 +38,236 @@ export const Minimap: React.FC = () => {
     const width = canvas.width;
     const height = canvas.height;
 
-    // Coordinate mapping: floor is X: -22 to 22, Z: -13 to 13
-    const worldMinX = -22;
-    const worldMaxX = 22;
-    const worldMinZ = -13;
-    const worldMaxZ = 13;
+    // Real Lab Metric Bounds
+    const minX = -10.0;
+    const maxX = 9.5;
+    const minZ = -6.0;
+    const maxZ = 6.0;
 
-    const mapX = (wx: number) => ((wx - worldMinX) / (worldMaxX - worldMinX)) * width;
-    const mapY = (wz: number) => ((wz - worldMinZ) / (worldMaxZ - worldMinZ)) * height;
+    const toMapX = (x: number) => ((x - minX) / (maxX - minX)) * width;
+    const toMapY = (z: number) => ((z - minZ) / (maxZ - minZ)) * height;
 
-    // Clear canvas
-    ctx.fillStyle = '#0f1115';
-    ctx.fillRect(0, 0, width, height);
+    // Clear
+    ctx.clearRect(0, 0, width, height);
 
-    // Draw subtle grid lines
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.04)';
-    ctx.lineWidth = 1;
-    for (let x = 0; x <= width; x += 20) {
-      ctx.beginPath();
-      ctx.moveTo(x, 0);
-      ctx.lineTo(x, height);
-      ctx.stroke();
-    }
-    for (let y = 0; y <= height; y += 20) {
-      ctx.beginPath();
-      ctx.moveTo(0, y);
-      ctx.lineTo(width, y);
-      ctx.stroke();
-    }
+    if (isExpanded) {
+      // 1. FULL EXPANDED 2D PLAN VIEW
+      ctx.fillStyle = '#0f1115';
+      ctx.fillRect(0, 0, width, height);
 
-    // Draw rooms (neutral translucent outlines, NO bright saturated fills)
-    floorPlan.rooms.forEach((room) => {
-      const b = room.bounds;
-      const rx = mapX(b.minX);
-      const ry = mapY(b.minZ);
-      const rw = mapX(b.maxX) - rx;
-      const rh = mapY(b.maxZ) - ry;
-
-      ctx.fillStyle = 'rgba(255, 255, 255, 0.03)';
-      ctx.fillRect(rx, ry, rw, rh);
-
-      ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
+      // Grid
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
       ctx.lineWidth = 1;
-      ctx.strokeRect(rx, ry, rw, rh);
+      for (let x = 0; x <= width; x += 25) {
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, height);
+        ctx.stroke();
+      }
+      for (let y = 0; y <= height; y += 25) {
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(width, y);
+        ctx.stroke();
+      }
 
-      if (isExpanded) {
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
-        ctx.font = '8px Inter, sans-serif';
+      // Rooms
+      floorPlanData.rooms.forEach((room) => {
+        const rx = toMapX(room.bounds.minX);
+        const ry = toMapY(room.bounds.minZ);
+        const rw = toMapX(room.bounds.maxX) - rx;
+        const rh = toMapY(room.bounds.maxZ) - ry;
+
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.04)';
+        ctx.fillRect(rx, ry, rw, rh);
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
+        ctx.lineWidth = 1.5;
+        ctx.strokeRect(rx, ry, rw, rh);
+
+        // Room Labels
+        ctx.fillStyle = '#94a3b8';
+        ctx.font = 'bold 9px Inter, sans-serif';
         ctx.textAlign = 'center';
-        ctx.fillText(room.name.split('(')[0].trim(), rx + rw / 2, ry + rh / 2);
+        ctx.fillText(room.name, rx + rw / 2, ry + rh / 2);
+      });
+
+      // Route
+      if (activePath.length >= 2) {
+        const color = isEmergency ? '#ef4444' : '#22d3ee';
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 2.5;
+        ctx.setLineDash([4, 3]);
+        ctx.beginPath();
+        ctx.moveTo(toMapX(activePath[0][0]), toMapY(activePath[0][2]));
+        for (let i = 1; i < activePath.length; i++) {
+          ctx.lineTo(toMapX(activePath[i][0]), toMapY(activePath[i][2]));
+        }
+        ctx.stroke();
+        ctx.setLineDash([]);
       }
-    });
 
-    // Draw Active Navigation Route
-    if (activePath.length >= 2) {
-      const routeColor = isEmergency ? '#ef4444' : '#22d3ee';
-      ctx.strokeStyle = routeColor;
-      ctx.lineWidth = isExpanded ? 3 : 2;
-      ctx.shadowColor = routeColor;
-      ctx.shadowBlur = 6;
-      ctx.setLineDash([4, 3]);
+      // User Dot + FOV
+      const ux = toMapX(userPosition[0]);
+      const uy = toMapY(userPosition[2]);
 
+      ctx.save();
+      ctx.translate(ux, uy);
+      ctx.rotate(userRotation + Math.PI);
+
+      ctx.fillStyle = isEmergency ? 'rgba(239, 68, 68, 0.25)' : 'rgba(34, 211, 238, 0.25)';
       ctx.beginPath();
-      ctx.moveTo(mapX(activePath[0][0]), mapY(activePath[0][2]));
-      for (let i = 1; i < activePath.length; i++) {
-        ctx.lineTo(mapX(activePath[i][0]), mapY(activePath[i][2]));
+      ctx.moveTo(0, 0);
+      ctx.arc(0, 0, 20, -Math.PI / 4, Math.PI / 4);
+      ctx.closePath();
+      ctx.fill();
+
+      ctx.fillStyle = '#ffffff';
+      ctx.beginPath();
+      ctx.arc(0, 0, 3.5, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+
+    } else {
+      // 2. ROUNDED RADAR MINIMAP (ROTATING WITH HEADING)
+      const cx = width / 2;
+      const cy = height / 2;
+      const radius = width / 2 - 2;
+
+      // Circular clip
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+      ctx.clip();
+
+      ctx.fillStyle = '#0d1117';
+      ctx.fillRect(0, 0, width, height);
+
+      // Transform so center is user position, and heading is UP
+      ctx.translate(cx, cy);
+      ctx.rotate(-userRotation);
+      ctx.scale(12, 12); // Radar zoom scale
+      ctx.translate(-userPosition[0], -userPosition[2]);
+
+      // Draw rooms
+      floorPlanData.rooms.forEach((room) => {
+        const rw = room.bounds.maxX - room.bounds.minX;
+        const rh = room.bounds.maxZ - room.bounds.minZ;
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.05)';
+        ctx.fillRect(room.bounds.minX, room.bounds.minZ, rw, rh);
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
+        ctx.lineWidth = 0.08;
+        ctx.strokeRect(room.bounds.minX, room.bounds.minZ, rw, rh);
+      });
+
+      // Route
+      if (activePath.length >= 2) {
+        ctx.strokeStyle = isEmergency ? '#ef4444' : '#22d3ee';
+        ctx.lineWidth = 0.15;
+        ctx.beginPath();
+        ctx.moveTo(activePath[0][0], activePath[0][2]);
+        for (let i = 1; i < activePath.length; i++) {
+          ctx.lineTo(activePath[i][0], activePath[i][2]);
+        }
+        ctx.stroke();
       }
+
+      ctx.restore();
+
+      // Fixed Center User Marker & Radar Rings
+      ctx.strokeStyle = 'rgba(34, 211, 238, 0.15)';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.arc(cx, cy, radius * 0.5, 0, Math.PI * 2);
+      ctx.arc(cx, cy, radius * 0.85, 0, Math.PI * 2);
       ctx.stroke();
 
-      ctx.setLineDash([]);
-      ctx.shadowBlur = 0;
-
-      // Draw destination pin
-      const dest = activePath[activePath.length - 1];
-      const dx = mapX(dest[0]);
-      const dy = mapY(dest[2]);
-      ctx.fillStyle = routeColor;
+      // Heading arrow (pointing up)
+      ctx.fillStyle = '#22d3ee';
       ctx.beginPath();
-      ctx.arc(dx, dy, isExpanded ? 4 : 3, 0, Math.PI * 2);
+      ctx.moveTo(cx, cy - 8);
+      ctx.lineTo(cx - 4, cy + 5);
+      ctx.lineTo(cx + 4, cy + 5);
+      ctx.closePath();
       ctx.fill();
+
+      // Outer border ring
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.12)';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+  }, [userPosition, userRotation, activePath, isEmergency, isExpanded]);
+
+  // Click on expanded map to navigate to clicked room / spot
+  const handleMapClick = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    if (!isExpanded) {
+      setIsExpanded(true);
+      return;
     }
 
-    // Draw User Location & Heading FOV cone
-    const ux = mapX(userPosition[0]);
-    const uy = mapY(userPosition[2]);
-
-    ctx.save();
-    ctx.translate(ux, uy);
-    const angle = userRotation + Math.PI;
-    ctx.rotate(angle);
-
-    ctx.fillStyle = isEmergency ? 'rgba(239, 68, 68, 0.25)' : 'rgba(34, 211, 238, 0.25)';
-    ctx.beginPath();
-    ctx.moveTo(0, 0);
-    ctx.arc(0, 0, isExpanded ? 24 : 16, -Math.PI / 4, Math.PI / 4);
-    ctx.closePath();
-    ctx.fill();
-
-    // Direction arrow
-    ctx.fillStyle = isEmergency ? '#ef4444' : '#22d3ee';
-    ctx.beginPath();
-    ctx.moveTo(0, isExpanded ? 9 : 6);
-    ctx.lineTo(-3, -2);
-    ctx.lineTo(3, -2);
-    ctx.closePath();
-    ctx.fill();
-
-    ctx.restore();
-
-    // Center user dot
-    ctx.fillStyle = '#ffffff';
-    ctx.beginPath();
-    ctx.arc(ux, uy, isExpanded ? 3 : 2, 0, Math.PI * 2);
-    ctx.fill();
-  }, [userPosition, userRotation, activePath, isEmergency, isExpanded, floorPlanTransform]);
-
-  const handleCanvasClick = (e: React.MouseEvent<HTMLCanvasElement>) => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const rect = canvas.getBoundingClientRect();
     const clickX = e.clientX - rect.left;
     const clickY = e.clientY - rect.top;
 
-    const worldMinX = -22;
-    const worldMaxX = 22;
-    const worldMinZ = -13;
-    const worldMaxZ = 13;
+    const minX = -10.0;
+    const maxX = 9.5;
+    const minZ = -6.0;
+    const maxZ = 6.0;
 
-    const wx = worldMinX + (clickX / canvas.width) * (worldMaxX - worldMinX);
-    const wz = worldMinZ + (clickY / canvas.height) * (worldMaxZ - worldMinZ);
+    const targetX = minX + (clickX / canvas.width) * (maxX - minX);
+    const targetZ = minZ + (clickY / canvas.height) * (maxZ - minZ);
 
-    setUserPosition([wx, 1.6, wz]);
+    // Find closest room or POI
+    let closestPoi = ALL_POIS[0];
+    let minDist = Infinity;
+    for (const poi of ALL_POIS) {
+      const d = Math.hypot(poi.position[0] - targetX, poi.position[2] - targetZ);
+      if (d < minDist) {
+        minDist = d;
+        closestPoi = poi;
+      }
+    }
+
+    const path = findPath(userPosition[0], userPosition[2], targetX, targetZ);
+    if (path.length >= 2) {
+      const { directions, totalDistance } = generateTurnDirections(path, closestPoi);
+      setDestination(closestPoi);
+      setNavigationRoute(path, directions, totalDistance);
+    }
   };
 
   return (
     <div
-      className={`rounded-2xl overflow-hidden shadow-2xl bg-[rgba(15,17,20,0.85)] backdrop-blur-xl border border-white/10 transition-all duration-300 pointer-events-auto select-none ${
-        isExpanded ? 'w-80 md:w-96' : 'w-48 md:w-56'
+      className={`rounded-2xl overflow-hidden shadow-2xl bg-[rgba(15,17,20,0.7)] backdrop-blur-md border border-white/10 transition-all duration-300 pointer-events-auto select-none ${
+        isExpanded ? 'w-80 md:w-96 p-2' : 'w-28 h-28 rounded-full p-1'
       }`}
     >
-      <div className="flex items-center justify-between px-3 py-1.5 bg-black/40 border-b border-white/5 text-[11px] font-medium text-slate-300">
-        <span className="flex items-center gap-1.5">
-          <Navigation className="w-3.5 h-3.5 text-cyan-400" />
-          2D Radar Minimap
-        </span>
-        <button
-          onClick={() => setIsExpanded(!isExpanded)}
-          className="p-1 hover:bg-slate-800 rounded text-slate-400 hover:text-white"
-          title={isExpanded ? 'Collapse' : 'Expand'}
-        >
-          {isExpanded ? <Minimize2 className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5" />}
-        </button>
-      </div>
-
-      <div className="relative p-1 bg-black/60">
-        <canvas
-          ref={canvasRef}
-          width={isExpanded ? 380 : 220}
-          height={isExpanded ? 210 : 120}
-          onClick={handleCanvasClick}
-          className="w-full h-auto cursor-crosshair rounded block"
-          title="Click to reposition user"
-        />
-        <div className="absolute bottom-2 left-2 text-[9px] text-slate-400 font-mono bg-black/80 px-1.5 py-0.5 rounded pointer-events-none border border-white/5">
-          X: {userPosition[0].toFixed(1)}m | Z: {userPosition[2].toFixed(1)}m
+      {isExpanded && (
+        <div className="flex items-center justify-between pb-1 px-1 border-b border-white/5 text-[11px] font-semibold text-slate-300 mb-1">
+          <span className="flex items-center gap-1.5 text-cyan-400">
+            <Map className="w-3.5 h-3.5" />
+            2D Interactive Floor Plan
+          </span>
+          <button
+            onClick={() => setIsExpanded(false)}
+            className="p-1 hover:bg-white/10 rounded-lg text-slate-400 hover:text-white"
+          >
+            <Minimize2 className="w-3.5 h-3.5" />
+          </button>
         </div>
-      </div>
+      )}
+
+      <canvas
+        ref={canvasRef}
+        width={isExpanded ? 360 : 104}
+        height={isExpanded ? 200 : 104}
+        onClick={handleMapClick}
+        className={`block cursor-pointer ${isExpanded ? 'rounded-xl' : 'rounded-full'}`}
+        title={isExpanded ? 'Tap any room to navigate' : 'Tap to expand full plan (Hotkey: M)'}
+      />
     </div>
   );
 };

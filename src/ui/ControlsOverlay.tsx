@@ -71,8 +71,8 @@ export const ControlsOverlay: React.FC = () => {
               <span className="text-[10px] text-slate-400 uppercase font-semibold block mb-1.5">
                 Rendering Quality
               </span>
-              <div className="grid grid-cols-3 gap-1 bg-black/40 p-1 rounded-xl border border-white/5">
-                {(['high', 'balanced', 'low'] as const).map((q) => (
+              <div className="grid grid-cols-4 gap-1 bg-black/40 p-1 rounded-xl border border-white/5">
+                {(['auto', 'high', 'balanced', 'low'] as const).map((q) => (
                   <button
                     key={q}
                     onClick={() => setQuality(q)}

@@ -10,6 +10,8 @@ export function useAutoWalkController() {
   const activePath = useStore((s) => s.activePath);
   const setUserPosition = useStore((s) => s.setUserPosition);
   const setUserRotation = useStore((s) => s.setUserRotation);
+  const activeDestination = useStore((s) => s.activeDestination);
+  const setArrivalToast = useStore((s) => s.setArrivalToast);
   const scanConfig = useStore((s) => s.scanConfig);
 
   const pathProgressRef = useRef<number>(0);
@@ -56,6 +58,9 @@ export function useAutoWalkController() {
       } catch (e) {
         // ignore
       }
+
+      const destTitle = activeDestination?.name || 'your destination';
+      setArrivalToast(`You've arrived at ${destTitle}`);
       return;
     }
 

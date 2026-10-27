@@ -88,7 +88,7 @@ export const SearchBar: React.FC = () => {
             setIsOpen(true);
           }}
           onFocus={() => setIsOpen(true)}
-          placeholder="Search Lab, PC-17, HOD, Washroom, Exit..."
+          placeholder="Search: Workshop, 3D Printers, Laser Cutter, Exit..."
           className="w-full py-2 px-2.5 bg-transparent text-xs md:text-sm text-slate-100 placeholder-slate-400 outline-none"
         />
         {query && (

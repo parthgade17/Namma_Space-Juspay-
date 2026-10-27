@@ -73,12 +73,15 @@ interface AppState {
 
   // UI & Quality Controls
   showLabels: boolean;
-  quality: 'high' | 'balanced' | 'low';
+  quality: 'auto' | 'high' | 'balanced' | 'low';
+  autoDpr: number;
+  showPerf: boolean;
   isCalibrationOpen: boolean; // Key T
   isSettingsOpen: boolean;
 
-  // Selected Object
+  // Selected Object & Arrival Toast
   selectedObject: SelectedObjectInfo | null;
+  arrivalToast: string | null;
   fps: number;
 
   // Actions
@@ -101,11 +104,14 @@ interface AppState {
   setFloorPlanTransform: (transform: Partial<FloorPlanTransform>) => void;
   setDynamicFloorPlan: (data: typeof floorPlanData) => void;
   setShowLabels: (show: boolean) => void;
-  setQuality: (q: 'high' | 'balanced' | 'low') => void;
+  setQuality: (q: 'auto' | 'high' | 'balanced' | 'low') => void;
+  setAutoDpr: (dpr: number) => void;
+  togglePerf: () => void;
   toggleCalibration: () => void;
   setIsCalibrationOpen: (open: boolean) => void;
   toggleSettings: () => void;
   setSelectedObject: (obj: SelectedObjectInfo | null) => void;
+  setArrivalToast: (msg: string | null) => void;
   setFps: (fps: number) => void;
 }
 
@@ -151,11 +157,14 @@ export const useStore = create<AppState>((set) => ({
   dynamicFloorPlan: floorPlanData,
 
   showLabels: true,
-  quality: 'high',
+  quality: 'auto',
+  autoDpr: 1.5,
+  showPerf: false,
   isCalibrationOpen: false,
   isSettingsOpen: false,
 
   selectedObject: null,
+  arrivalToast: null,
   fps: 60,
 
   setCurrentMode: (mode) => set({ currentMode: mode }),
@@ -191,9 +200,12 @@ export const useStore = create<AppState>((set) => ({
   setDynamicFloorPlan: (data) => set({ dynamicFloorPlan: data }),
   setShowLabels: (show) => set({ showLabels: show }),
   setQuality: (q) => set({ quality: q }),
+  setAutoDpr: (dpr) => set({ autoDpr: dpr }),
+  togglePerf: () => set((s) => ({ showPerf: !s.showPerf })),
   toggleCalibration: () => set((s) => ({ isCalibrationOpen: !s.isCalibrationOpen })),
   setIsCalibrationOpen: (open) => set({ isCalibrationOpen: open }),
   toggleSettings: () => set((s) => ({ isSettingsOpen: !s.isSettingsOpen })),
   setSelectedObject: (obj) => set({ selectedObject: obj }),
+  setArrivalToast: (msg) => set({ arrivalToast: msg }),
   setFps: (fps) => set({ fps }),
 }));

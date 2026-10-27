@@ -6,12 +6,9 @@ import { findPath } from '../navigation/astar';
 import { generateTurnDirections } from '../navigation/turnByTurn';
 import {
   Compass,
-  Layers,
-  Sparkles,
   AlertTriangle,
-  Sliders,
   Box,
-  Eye,
+  Sparkles,
   Map,
 } from 'lucide-react';
 
@@ -27,8 +24,37 @@ export const TopNavBar: React.FC = () => {
   const triggerEmergencyMode = useStore((s) => s.triggerEmergencyMode);
   const setDestination = useStore((s) => s.setDestination);
   const setNavigationRoute = useStore((s) => s.setNavigationRoute);
-  const isAlignMode = useStore((s) => s.isAlignMode);
-  const toggleAlignMode = useStore((s) => s.toggleAlignMode);
+
+  const destinationChips = [
+    { label: 'Workshop', query: 'Workshop' },
+    { label: 'Electronics', query: 'Electronics' },
+    { label: '3D Printers', query: '3D Printer' },
+    { label: 'Laser Cutter', query: 'Laser Cutter' },
+    { label: 'Meeting Room', query: 'Meeting Room' },
+    { label: 'Exit', query: 'Entrance' },
+  ];
+
+  const handleChipClick = (label: string, query: string) => {
+    const target = ALL_POIS.find(
+      (p) =>
+        p.name.toLowerCase().includes(query.toLowerCase()) ||
+        p.roomName.toLowerCase().includes(query.toLowerCase())
+    );
+
+    if (target) {
+      setDestination(target);
+      const path = findPath(
+        userPosition[0],
+        userPosition[2],
+        target.position[0],
+        target.position[2]
+      );
+      if (path.length >= 2) {
+        const { directions, totalDistance } = generateTurnDirections(path, target);
+        setNavigationRoute(path, directions, totalDistance);
+      }
+    }
+  };
 
   const handleEmergencyEvacuation = () => {
     triggerEmergencyMode();
@@ -65,32 +91,32 @@ export const TopNavBar: React.FC = () => {
 
   return (
     <header className="absolute top-0 left-0 right-0 z-30 p-3 md:p-4 pointer-events-none select-none">
-      <div className="flex flex-wrap items-center justify-between gap-3 max-w-7xl mx-auto">
+      <div className="flex items-start justify-between gap-3 max-w-7xl mx-auto">
         
-        {/* Brand & View Mode Switcher */}
-        <div className="flex items-center gap-2 p-1.5 md:px-3 md:py-2 rounded-2xl bg-[rgba(15,17,20,0.7)] backdrop-blur-md border border-white/10 shadow-xl pointer-events-auto">
+        {/* 1. TOP-LEFT: Logo + View Switcher (3D Model | Real Scan | Plan) */}
+        <div className="flex items-center gap-2 p-1.5 md:px-3 md:py-2 rounded-2xl bg-[rgba(15,17,20,0.65)] backdrop-blur-md border border-white/10 shadow-xl pointer-events-auto shrink-0">
           <div className="flex items-center gap-2">
             <span className="p-1.5 rounded-xl bg-cyan-500/20 border border-cyan-500/40 text-cyan-400">
               <Compass className="w-4 h-4" />
             </span>
-            <div>
-              <span className="text-sm font-extrabold text-white tracking-tight">
-                Raasta <span className="text-cyan-400">3D</span>
-              </span>
-            </div>
+            <span className="text-sm font-extrabold text-white tracking-tight hidden sm:inline">
+              Raasta <span className="text-cyan-400">3D</span>
+            </span>
           </div>
 
           <div className="h-5 w-px bg-white/10 mx-1 hidden sm:block" />
 
-          {/* Top Switch: "3D Model" (default) | "Real Scan" */}
-          <div className="flex items-center p-0.5 rounded-xl bg-black/40 border border-white/5">
+          {/* View Mode Switcher: 3D Model | Real Scan | Plan */}
+          <div className="flex items-center p-0.5 rounded-xl bg-black/40 border border-white/5 text-xs font-semibold">
+            {/* 3D Model */}
             <button
               onClick={() => {
                 setViewMode('mesh');
+                if (isTopDownView) toggleTopDownView();
                 if (currentMode === 'pipeline') setCurrentMode('roam');
               }}
-              className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold transition-all ${
-                viewMode === 'mesh' && currentMode === 'roam'
+              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg transition-all ${
+                viewMode === 'mesh' && !isTopDownView && currentMode === 'roam'
                   ? 'bg-cyan-500 text-slate-950 font-bold shadow'
                   : 'text-slate-400 hover:text-white'
               }`}
@@ -99,12 +125,14 @@ export const TopNavBar: React.FC = () => {
               <span>3D Model</span>
             </button>
 
+            {/* Real Scan */}
             <button
               onClick={() => {
                 setViewMode('splat');
+                if (isTopDownView) toggleTopDownView();
                 if (currentMode === 'pipeline') setCurrentMode('roam');
               }}
-              className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold transition-all ${
+              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg transition-all ${
                 viewMode === 'splat' && currentMode === 'roam'
                   ? 'bg-cyan-500 text-slate-950 font-bold shadow'
                   : 'text-slate-400 hover:text-white'
@@ -113,60 +141,45 @@ export const TopNavBar: React.FC = () => {
               <Sparkles className="w-3.5 h-3.5" />
               <span>Real Scan</span>
             </button>
-          </div>
 
-          {/* Plan View Toggle (for mesh only) */}
-          {viewMode === 'mesh' && (
+            {/* Plan View */}
             <button
-              onClick={toggleTopDownView}
-              className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium transition-all ${
+              onClick={() => {
+                if (viewMode !== 'mesh') setViewMode('mesh');
+                toggleTopDownView();
+              }}
+              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg transition-all ${
                 isTopDownView
-                  ? 'bg-slate-800 text-cyan-400 border border-cyan-500/40'
-                  : 'text-slate-400 hover:text-white hover:bg-slate-800/40'
+                  ? 'bg-cyan-500 text-slate-950 font-bold shadow'
+                  : 'text-slate-400 hover:text-white'
               }`}
-              title="Top-down architectural plan view (ceiling hidden)"
             >
               <Map className="w-3.5 h-3.5" />
-              <span className="hidden md:inline">{isTopDownView ? '1st Person' : 'Plan View'}</span>
+              <span>Plan</span>
             </button>
-          )}
+          </div>
         </div>
 
-        {/* Center Search Bar */}
-        <div className="pointer-events-auto">
+        {/* 2. TOP-CENTRE: Search Bar + Destination Chips */}
+        <div className="flex flex-col items-center gap-1.5 pointer-events-auto max-w-md w-full">
           <SearchBar />
+
+          {/* Quick Destination Chips */}
+          <div className="flex items-center gap-1.5 overflow-x-auto max-w-full px-1 py-0.5 no-scrollbar">
+            {destinationChips.map((chip) => (
+              <button
+                key={chip.label}
+                onClick={() => handleChipClick(chip.label, chip.query)}
+                className="px-2.5 py-1 rounded-full bg-[rgba(15,17,20,0.65)] hover:bg-slate-800 backdrop-blur-md border border-white/10 text-[11px] text-slate-300 hover:text-cyan-400 hover:border-cyan-400/40 transition-all whitespace-nowrap cursor-pointer shadow"
+              >
+                {chip.label}
+              </button>
+            ))}
+          </div>
         </div>
 
-        {/* Right Action Controls: Align Floor Plan, Pipeline, Emergency */}
-        <div className="flex items-center gap-2 pointer-events-auto">
-          {/* Real Pipeline Screen Button */}
-          <button
-            onClick={() => setCurrentMode(currentMode === 'pipeline' ? 'roam' : 'pipeline')}
-            className={`flex items-center gap-1.5 px-3 py-2 rounded-2xl text-xs font-semibold border transition-all ${
-              currentMode === 'pipeline'
-                ? 'bg-cyan-500 text-slate-950 font-bold border-cyan-400 shadow-lg'
-                : 'bg-[rgba(15,17,20,0.7)] backdrop-blur-md hover:bg-slate-800 text-slate-200 border-white/10'
-            }`}
-          >
-            <Layers className="w-3.5 h-3.5 text-cyan-400" />
-            <span className="hidden sm:inline">Pipeline</span>
-          </button>
-
-          {/* Align Floor Plan Button */}
-          <button
-            onClick={toggleAlignMode}
-            className={`flex items-center gap-1.5 px-3 py-2 rounded-2xl text-xs font-semibold border transition-all ${
-              isAlignMode
-                ? 'bg-cyan-500 text-slate-950 font-bold border-cyan-400'
-                : 'bg-[rgba(15,17,20,0.7)] backdrop-blur-md hover:bg-slate-800 text-slate-200 border-white/10'
-            }`}
-            title="Align floor plan orthographic view"
-          >
-            <Sliders className="w-3.5 h-3.5 text-cyan-400" />
-            <span className="hidden sm:inline">Align Plan</span>
-          </button>
-
-          {/* Emergency Evacuation Mode Button */}
+        {/* 3. TOP-RIGHT: Emergency Evacuation Only */}
+        <div className="pointer-events-auto shrink-0">
           <button
             onClick={handleEmergencyEvacuation}
             className={`flex items-center gap-1.5 px-3.5 py-2 rounded-2xl text-xs font-bold transition-all shadow-lg ${
