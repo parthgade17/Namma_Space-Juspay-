@@ -209,8 +209,8 @@ export const Minimap: React.FC = () => {
     }
   }, [userPosition, userRotation, activePath, isEmergency, isExpanded, isAutoWalking]);
 
-  // Click on expanded map to navigate to clicked room / spot
-  const handleMapClick = (e: React.MouseEvent<HTMLCanvasElement>) => {
+  // Click or touch on map
+  const handleMapInteract = (clientX: number, clientY: number) => {
     if (!isExpanded) {
       setIsExpanded(true);
       return;
@@ -219,8 +219,8 @@ export const Minimap: React.FC = () => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const rect = canvas.getBoundingClientRect();
-    const clickX = e.clientX - rect.left;
-    const clickY = e.clientY - rect.top;
+    const clickX = clientX - rect.left;
+    const clickY = clientY - rect.top;
 
     const minX = -10.0;
     const maxX = 9.5;
@@ -251,21 +251,23 @@ export const Minimap: React.FC = () => {
 
   return (
     <div
-      className={`rounded-2xl overflow-hidden shadow-2xl bg-[rgba(15,17,20,0.7)] backdrop-blur-md border border-white/10 transition-all duration-300 pointer-events-auto select-none ${
-        isExpanded ? 'w-80 md:w-96 p-2' : 'w-28 h-28 rounded-full p-1'
+      className={`rounded-2xl overflow-hidden shadow-2xl bg-[rgba(15,17,20,0.85)] backdrop-blur-xl border border-white/10 transition-all duration-300 pointer-events-auto select-none ${
+        isExpanded
+          ? 'fixed inset-3 sm:inset-auto sm:bottom-4 sm:right-4 sm:w-96 p-3 z-50 flex flex-col'
+          : 'w-22 h-22 sm:w-28 sm:h-28 rounded-full p-1'
       }`}
     >
       {isExpanded && (
-        <div className="flex items-center justify-between pb-1 px-1 border-b border-white/5 text-[11px] font-semibold text-slate-300 mb-1">
-          <span className="flex items-center gap-1.5 text-cyan-400">
-            <Map className="w-3.5 h-3.5" />
+        <div className="flex items-center justify-between pb-2 px-1 border-b border-white/10 text-xs font-semibold text-slate-300 mb-2">
+          <span className="flex items-center gap-1.5 text-cyan-400 font-bold">
+            <Map className="w-4 h-4" />
             2D Interactive Floor Plan
           </span>
           <button
             onClick={() => setIsExpanded(false)}
-            className="p-1 hover:bg-white/10 rounded-lg text-slate-400 hover:text-white"
+            className="p-1.5 hover:bg-white/10 rounded-lg text-slate-400 hover:text-white cursor-pointer"
           >
-            <Minimize2 className="w-3.5 h-3.5" />
+            <Minimize2 className="w-4 h-4" />
           </button>
         </div>
       )}
@@ -273,9 +275,14 @@ export const Minimap: React.FC = () => {
       <canvas
         ref={canvasRef}
         width={isExpanded ? 360 : 104}
-        height={isExpanded ? 200 : 104}
-        onClick={handleMapClick}
-        className={`block cursor-pointer ${isExpanded ? 'rounded-xl' : 'rounded-full'}`}
+        height={isExpanded ? 240 : 104}
+        onClick={(e) => handleMapInteract(e.clientX, e.clientY)}
+        onTouchEnd={(e) => {
+          if (e.changedTouches.length > 0) {
+            handleMapInteract(e.changedTouches[0].clientX, e.changedTouches[0].clientY);
+          }
+        }}
+        className={`block cursor-pointer mx-auto ${isExpanded ? 'rounded-xl max-w-full' : 'rounded-full'}`}
         title={isExpanded ? 'Tap any room to navigate' : 'Tap to expand full plan (Hotkey: M)'}
       />
     </div>

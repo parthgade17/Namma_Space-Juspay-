@@ -76,9 +76,9 @@ export const SearchBar: React.FC = () => {
   };
 
   return (
-    <div ref={containerRef} className="relative w-64 sm:w-80 md:w-96 select-none pointer-events-auto">
+    <div ref={containerRef} className="relative w-full max-w-full sm:max-w-md select-none pointer-events-auto">
       {/* Search Input Box */}
-      <div className="relative flex items-center rounded-2xl bg-[rgba(15,17,20,0.6)] backdrop-blur-md border border-white/10 shadow-xl focus-within:border-cyan-400/80 transition-all">
+      <div className="relative flex items-center rounded-2xl bg-[rgba(15,17,20,0.65)] backdrop-blur-md border border-white/10 shadow-xl focus-within:border-cyan-400/80 transition-all">
         <Search className="w-4 h-4 ml-3 text-slate-400 pointer-events-none" />
         <input
           type="text"

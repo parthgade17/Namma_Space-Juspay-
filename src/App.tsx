@@ -36,7 +36,7 @@ export function App() {
       <ArrivalToast />
 
       {/* 5. Bottom Right: 2D Radar Minimap (Rounded, Rotates with Heading, Expandable) */}
-      <div className="absolute bottom-4 right-4 z-30 pointer-events-auto">
+      <div className="fixed bottom-16 sm:bottom-4 right-3 sm:right-4 z-30 pointer-events-auto">
         <Minimap />
       </div>
 

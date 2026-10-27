@@ -23,8 +23,8 @@ export const SettingsModal: React.FC<Props> = ({ isOpen, onClose }) => {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-150">
-      <div className="w-full max-w-sm rounded-2xl bg-[rgba(15,17,20,0.9)] backdrop-blur-xl border border-white/10 shadow-2xl p-5 text-slate-100 flex flex-col gap-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-150">
+      <div className="w-full max-w-sm rounded-2xl bg-[rgba(15,17,20,0.92)] backdrop-blur-xl border border-white/10 shadow-2xl p-4 sm:p-5 text-slate-100 flex flex-col gap-4 max-h-[85vh] overflow-y-auto">
         
         {/* Header */}
         <div className="flex items-center justify-between border-b border-white/10 pb-3">

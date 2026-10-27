@@ -1,42 +1,43 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { useStore } from '../state/useStore';
 import { defaultNavGrid } from '../navigation/navGrid';
 import * as THREE from 'three';
+import { ChevronUp, ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react';
 
 export const VirtualJoystick: React.FC = () => {
   const userPosition = useStore((s) => s.userPosition);
   const setUserPosition = useStore((s) => s.setUserPosition);
   const userRotation = useStore((s) => s.userRotation);
-  const setUserRotation = useStore((s) => s.setUserRotation);
   const scanConfig = useStore((s) => s.scanConfig);
   const isAlignMode = useStore((s) => s.isAlignMode);
+  const isAutoWalking = useStore((s) => s.isAutoWalking);
 
   const [isTouchDevice, setIsTouchDevice] = useState(false);
-  const [joystickActive, setJoystickActive] = useState(false);
-  const [joystickOrigin, setJoystickOrigin] = useState<{ x: number; y: number } | null>(null);
-  const [joystickDelta, setJoystickDelta] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
+  const [knobOffset, setKnobOffset] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
+  const [isInteracting, setIsInteracting] = useState(false);
 
-  const lookTouchId = useRef<number | null>(null);
-  const lastLookPos = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
-  const moveTouchId = useRef<number | null>(null);
+  const padRef = useRef<HTMLDivElement>(null);
+  const activeTouchId = useRef<number | null>(null);
   const currentDeltaRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
 
   useEffect(() => {
-    setIsTouchDevice('ontouchstart' in window || navigator.maxTouchPoints > 0);
+    const hasTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0 || window.innerWidth < 1024;
+    setIsTouchDevice(hasTouch);
   }, []);
 
-  // Movement loop
+  // Smooth movement interval
   useEffect(() => {
-    if (isAlignMode) return;
+    if (isAlignMode || isAutoWalking) return;
 
     const interval = setInterval(() => {
       const { x: dx, y: dy } = currentDeltaRef.current;
-      if (Math.hypot(dx, dy) < 4) return;
+      if (Math.hypot(dx, dy) < 3) return;
 
-      const normX = dx / 45;
-      const normY = -dy / 45;
+      const maxRadius = 38;
+      const normX = dx / maxRadius;
+      const normY = -dy / maxRadius; // invert Y for screen coords
 
-      const speed = (scanConfig.speed ?? 1.6) * 0.035;
+      const speed = (scanConfig.speed ?? 1.6) * 0.038;
       const moveX = (normX * Math.cos(userRotation) + normY * Math.sin(userRotation)) * speed;
       const moveZ = (-normX * Math.sin(userRotation) + normY * Math.cos(userRotation)) * speed;
 
@@ -46,6 +47,10 @@ export const VirtualJoystick: React.FC = () => {
       // Nav-layer wall collision
       if (!defaultNavGrid.isWalkableWorld(nextX, userPosition[2])) nextX = userPosition[0];
       if (!defaultNavGrid.isWalkableWorld(userPosition[0], nextZ)) nextZ = userPosition[2];
+      if (!defaultNavGrid.isWalkableWorld(nextX, nextZ)) {
+        nextX = userPosition[0];
+        nextZ = userPosition[2];
+      }
 
       // Bounds clamp
       const b = scanConfig.bounds;
@@ -66,88 +71,96 @@ export const VirtualJoystick: React.FC = () => {
     }, 25);
 
     return () => clearInterval(interval);
-  }, [userPosition, userRotation, isAlignMode, scanConfig, setUserPosition]);
+  }, [userPosition, userRotation, isAlignMode, isAutoWalking, scanConfig, setUserPosition]);
+
+  const handleTouchStart = (e: React.TouchEvent<HTMLDivElement>) => {
+    if (activeTouchId.current !== null || !padRef.current) return;
+    const touch = e.changedTouches[0];
+    activeTouchId.current = touch.identifier;
+    setIsInteracting(true);
+    updateKnob(touch.clientX, touch.clientY);
+  };
+
+  const handleTouchMove = (e: React.TouchEvent<HTMLDivElement>) => {
+    if (activeTouchId.current === null) return;
+    for (let i = 0; i < e.changedTouches.length; i++) {
+      const touch = e.changedTouches[i];
+      if (touch.identifier === activeTouchId.current) {
+        updateKnob(touch.clientX, touch.clientY);
+      }
+    }
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent<HTMLDivElement>) => {
+    for (let i = 0; i < e.changedTouches.length; i++) {
+      const touch = e.changedTouches[i];
+      if (touch.identifier === activeTouchId.current) {
+        activeTouchId.current = null;
+        setIsInteracting(false);
+        setKnobOffset({ x: 0, y: 0 });
+        currentDeltaRef.current = { x: 0, y: 0 };
+      }
+    }
+  };
+
+  const updateKnob = useCallback((clientX: number, clientY: number) => {
+    if (!padRef.current) return;
+    const rect = padRef.current.getBoundingClientRect();
+    const centerX = rect.left + rect.width / 2;
+    const centerY = rect.top + rect.height / 2;
+
+    const rawDx = clientX - centerX;
+    const rawDy = clientY - centerY;
+    const dist = Math.hypot(rawDx, rawDy);
+    const maxRadius = 38;
+
+    const clampedX = dist > maxRadius ? (rawDx / dist) * maxRadius : rawDx;
+    const clampedY = dist > maxRadius ? (rawDy / dist) * maxRadius : rawDy;
+
+    setKnobOffset({ x: clampedX, y: clampedY });
+    currentDeltaRef.current = { x: clampedX, y: clampedY };
+  }, []);
 
   if (!isTouchDevice || isAlignMode) return null;
 
-  const handleTouchStart = (e: React.TouchEvent) => {
-    for (let i = 0; i < e.changedTouches.length; i++) {
-      const touch = e.changedTouches[i];
-      // Left 45% of screen = Movement joystick
-      if (touch.clientX < window.innerWidth * 0.45 && moveTouchId.current === null) {
-        moveTouchId.current = touch.identifier;
-        setJoystickOrigin({ x: touch.clientX, y: touch.clientY });
-        setJoystickActive(true);
-      }
-      // Right 55% of screen = Look drag
-      else if (touch.clientX >= window.innerWidth * 0.45 && lookTouchId.current === null) {
-        lookTouchId.current = touch.identifier;
-        lastLookPos.current = { x: touch.clientX, y: touch.clientY };
-      }
-    }
-  };
-
-  const handleTouchMove = (e: React.TouchEvent) => {
-    for (let i = 0; i < e.changedTouches.length; i++) {
-      const touch = e.changedTouches[i];
-      if (touch.identifier === moveTouchId.current && joystickOrigin) {
-        const rawDx = touch.clientX - joystickOrigin.x;
-        const rawDy = touch.clientY - joystickOrigin.y;
-        const dist = Math.hypot(rawDx, rawDy);
-        const maxDist = 45;
-        const clampedX = dist > maxDist ? (rawDx / dist) * maxDist : rawDx;
-        const clampedY = dist > maxDist ? (rawDy / dist) * maxDist : rawDy;
-
-        setJoystickDelta({ x: clampedX, y: clampedY });
-        currentDeltaRef.current = { x: clampedX, y: clampedY };
-      } else if (touch.identifier === lookTouchId.current) {
-        const dx = touch.clientX - lastLookPos.current.x;
-        lastLookPos.current = { x: touch.clientX, y: touch.clientY };
-        setUserRotation(userRotation - dx * 0.005);
-      }
-    }
-  };
-
-  const handleTouchEnd = (e: React.TouchEvent) => {
-    for (let i = 0; i < e.changedTouches.length; i++) {
-      const touch = e.changedTouches[i];
-      if (touch.identifier === moveTouchId.current) {
-        moveTouchId.current = null;
-        setJoystickActive(false);
-        setJoystickDelta({ x: 0, y: 0 });
-        currentDeltaRef.current = { x: 0, y: 0 };
-      } else if (touch.identifier === lookTouchId.current) {
-        lookTouchId.current = null;
-      }
-    }
-  };
-
   return (
     <div
-      className="absolute inset-0 z-20 pointer-events-auto touch-none select-none"
+      ref={padRef}
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
       onTouchCancel={handleTouchEnd}
+      className={`fixed bottom-16 sm:bottom-20 left-4 z-40 w-28 h-28 rounded-full flex items-center justify-center touch-none select-none transition-opacity duration-300 pointer-events-auto ${
+        isAutoWalking ? 'opacity-30 pointer-events-none' : 'opacity-85 hover:opacity-100'
+      }`}
     >
-      {/* Visual Joystick Base & Puck */}
-      {joystickActive && joystickOrigin && (
-        <div
-          className="fixed w-28 h-28 -translate-x-1/2 -translate-y-1/2 rounded-full border border-cyan-400/40 bg-black/40 backdrop-blur-sm pointer-events-none flex items-center justify-center"
-          style={{ left: joystickOrigin.x, top: joystickOrigin.y }}
-        >
-          <div
-            className="w-11 h-11 rounded-full bg-cyan-400/80 shadow-lg shadow-cyan-500/50"
-            style={{
-              transform: `translate(${joystickDelta.x}px, ${joystickDelta.y}px)`,
-            }}
-          />
-        </div>
-      )}
+      {/* Outer Glow Ring & Base Pad */}
+      <div className="absolute inset-0 rounded-full bg-[rgba(15,17,20,0.65)] backdrop-blur-md border border-cyan-500/30 shadow-2xl shadow-cyan-500/10 flex items-center justify-center">
+        {/* Subtle Cardinal Direction Indicators */}
+        <ChevronUp className="absolute top-1 w-3.5 h-3.5 text-cyan-400/50" />
+        <ChevronDown className="absolute bottom-1 w-3.5 h-3.5 text-cyan-400/50" />
+        <ChevronLeft className="absolute left-1 w-3.5 h-3.5 text-cyan-400/50" />
+        <ChevronRight className="absolute right-1 w-3.5 h-3.5 text-cyan-400/50" />
 
-      {/* Guide on right */}
-      <div className="absolute right-4 bottom-24 pointer-events-none text-slate-400 text-[10px] px-2.5 py-1 rounded-full bg-black/50 border border-white/5">
-        Drag right half to look
+        {/* Center Crosshair / Neutral Ring */}
+        <div className="w-10 h-10 rounded-full border border-white/10" />
+      </div>
+
+      {/* Floating Thumb Stick Knob */}
+      <div
+        className={`w-12 h-12 rounded-full shadow-lg transition-transform ease-out ${
+          isInteracting
+            ? 'bg-gradient-to-tr from-cyan-500 to-cyan-300 shadow-cyan-400/50 border border-white/60 scale-105 duration-75'
+            : 'bg-cyan-500/80 border border-white/30 duration-200'
+        }`}
+        style={{
+          transform: `translate(${knobOffset.x}px, ${knobOffset.y}px)`,
+        }}
+      >
+        {/* Knob Core Highlight */}
+        <div className="w-full h-full rounded-full flex items-center justify-center">
+          <div className="w-3.5 h-3.5 rounded-full bg-slate-950/40" />
+        </div>
       </div>
     </div>
   );

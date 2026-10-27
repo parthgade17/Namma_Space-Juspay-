@@ -43,7 +43,7 @@ export const ObjectInfoCard: React.FC = () => {
   };
 
   return (
-    <div className="absolute right-4 top-20 z-30 w-80 select-none pointer-events-auto animate-in fade-in slide-in-from-right duration-200">
+    <div className="fixed sm:absolute bottom-16 sm:bottom-auto sm:top-20 left-3 right-3 sm:left-auto sm:right-4 z-40 sm:w-80 max-w-sm mx-auto sm:mx-0 select-none pointer-events-auto animate-in fade-in slide-in-from-bottom sm:slide-in-from-right duration-200">
       <div className="rounded-2xl p-4 bg-[rgba(15,17,20,0.85)] backdrop-blur-xl border border-white/10 shadow-2xl">
         
         {/* Header */}

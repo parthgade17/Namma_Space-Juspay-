@@ -10,6 +10,7 @@ export const FirstPersonControls: React.FC = () => {
   const { camera, gl } = useThree();
   const userPosition = useStore((s) => s.userPosition);
   const setUserPosition = useStore((s) => s.setUserPosition);
+  const userRotation = useStore((s) => s.userRotation);
   const setUserRotation = useStore((s) => s.setUserRotation);
   const isAutoWalking = useStore((s) => s.isAutoWalking);
   const activePath = useStore((s) => s.activePath);
@@ -79,6 +80,50 @@ export const FirstPersonControls: React.FC = () => {
       );
     };
 
+    // Touch look tracking for mobile
+    let touchLookId: number | null = null;
+    let lastTouchX = 0;
+    let lastTouchY = 0;
+
+    const onTouchStart = (e: TouchEvent) => {
+      if (isAutoWalking) return;
+      if (touchLookId === null && e.changedTouches.length > 0) {
+        const touch = e.changedTouches[0];
+        touchLookId = touch.identifier;
+        lastTouchX = touch.clientX;
+        lastTouchY = touch.clientY;
+      }
+    };
+
+    const onTouchMove = (e: TouchEvent) => {
+      if (isAutoWalking || touchLookId === null) return;
+      for (let i = 0; i < e.changedTouches.length; i++) {
+        const touch = e.changedTouches[i];
+        if (touch.identifier === touchLookId) {
+          const dx = touch.clientX - lastTouchX;
+          const dy = touch.clientY - lastTouchY;
+          lastTouchX = touch.clientX;
+          lastTouchY = touch.clientY;
+
+          targetEuler.current.y -= dx * 0.0032;
+          targetEuler.current.x -= dy * 0.0032;
+          targetEuler.current.x = THREE.MathUtils.clamp(
+            targetEuler.current.x,
+            -Math.PI / 2.1,
+            Math.PI / 2.1
+          );
+        }
+      }
+    };
+
+    const onTouchEnd = (e: TouchEvent) => {
+      for (let i = 0; i < e.changedTouches.length; i++) {
+        if (e.changedTouches[i].identifier === touchLookId) {
+          touchLookId = null;
+        }
+      }
+    };
+
     const onKeyDown = (e: KeyboardEvent) => {
       keysPressed.current[e.code] = true;
       if (e.code === 'KeyT' && !e.repeat) {
@@ -95,6 +140,10 @@ export const FirstPersonControls: React.FC = () => {
 
     const dom = gl.domElement;
     dom.addEventListener('click', onPointerDown);
+    dom.addEventListener('touchstart', onTouchStart, { passive: true });
+    dom.addEventListener('touchmove', onTouchMove, { passive: true });
+    dom.addEventListener('touchend', onTouchEnd, { passive: true });
+    dom.addEventListener('touchcancel', onTouchEnd, { passive: true });
     document.addEventListener('pointerlockchange', onPointerLockChange);
     document.addEventListener('mousemove', onMouseMove);
     window.addEventListener('keydown', onKeyDown);
@@ -102,6 +151,10 @@ export const FirstPersonControls: React.FC = () => {
 
     return () => {
       dom.removeEventListener('click', onPointerDown);
+      dom.removeEventListener('touchstart', onTouchStart);
+      dom.removeEventListener('touchmove', onTouchMove);
+      dom.removeEventListener('touchend', onTouchEnd);
+      dom.removeEventListener('touchcancel', onTouchEnd);
       document.removeEventListener('pointerlockchange', onPointerLockChange);
       document.removeEventListener('mousemove', onMouseMove);
       window.removeEventListener('keydown', onKeyDown);
@@ -146,16 +199,19 @@ export const FirstPersonControls: React.FC = () => {
   useFrame((_, delta) => {
     if (isAlignMode) return;
 
-    // Apply slight mouse-look damping
+    // Apply slight mouse/touch look damping
     const damp = Math.min(1.0, delta * 24);
     currentEuler.current.x += (targetEuler.current.x - currentEuler.current.x) * damp;
     currentEuler.current.y += (targetEuler.current.y - currentEuler.current.y) * damp;
     camera.quaternion.setFromEuler(currentEuler.current);
     setUserRotation(currentEuler.current.y);
 
-    // In auto-walk, position is driven by useAutoWalkController
+    // In auto-walk, position is driven by useAutoWalkController & camera smoothly turns
     if (isAutoWalking) {
       camera.position.set(userPosition[0], scanConfig.eyeHeight ?? 1.6, userPosition[2]);
+      currentEuler.current.set(0, userRotation, 0, 'YXZ');
+      targetEuler.current.set(0, userRotation, 0, 'YXZ');
+      camera.quaternion.setFromEuler(currentEuler.current);
       return;
     }
 
