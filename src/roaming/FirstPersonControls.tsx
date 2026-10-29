@@ -14,6 +14,8 @@ export const FirstPersonControls: React.FC = () => {
   const setUserRotation = useStore((s) => s.setUserRotation);
   const cameraPerspective = useStore((s) => s.cameraPerspective);
   const isAutoWalking = useStore((s) => s.isAutoWalking);
+  const isUserWalking = useStore((s) => s.isUserWalking);
+  const setIsUserWalking = useStore((s) => s.setIsUserWalking);
   const activePath = useStore((s) => s.activePath);
   const activeDestination = useStore((s) => s.activeDestination);
   const setNavigationRoute = useStore((s) => s.setNavigationRoute);
@@ -127,6 +129,11 @@ export const FirstPersonControls: React.FC = () => {
 
     const onKeyDown = (e: KeyboardEvent) => {
       keysPressed.current[e.code] = true;
+      if (e.code === 'KeyW' || e.code === 'ArrowUp') {
+        if (activePath.length >= 2) {
+          setIsUserWalking(true);
+        }
+      }
       if (e.code === 'KeyT' && !e.repeat) {
         toggleCalibration();
       }
@@ -137,6 +144,9 @@ export const FirstPersonControls: React.FC = () => {
 
     const onKeyUp = (e: KeyboardEvent) => {
       keysPressed.current[e.code] = false;
+      if (e.code === 'KeyW' || e.code === 'ArrowUp') {
+        setIsUserWalking(false);
+      }
     };
 
     const dom = gl.domElement;
@@ -234,8 +244,8 @@ export const FirstPersonControls: React.FC = () => {
       }
     };
 
-    // In auto-walk, position is driven by useAutoWalkController & camera smoothly turns
-    if (isAutoWalking) {
+    // In route navigation mode, path progress and turn steering are managed along the route
+    if (activePath.length >= 2) {
       updateCamera(userPosition[0], userPosition[2]);
       return;
     }

@@ -7,6 +7,7 @@ export const NavigationPuck: React.FC = () => {
   const userPosition = useStore((s) => s.userPosition);
   const userRotation = useStore((s) => s.userRotation);
   const isAutoWalking = useStore((s) => s.isAutoWalking);
+  const isUserWalking = useStore((s) => s.isUserWalking);
   const isEmergency = useStore((s) => s.isEmergency);
   const cameraPerspective = useStore((s) => s.cameraPerspective);
 
@@ -36,7 +37,7 @@ export const NavigationPuck: React.FC = () => {
       userPosition[2] - lastUserPos.current[2]
     );
     lastUserPos.current = [...userPosition];
-    const isMoving = isAutoWalking || distMoved > 0.005;
+    const isMoving = isAutoWalking || isUserWalking || distMoved > 0.005;
 
     // 2. Google Maps Floor Radial Radar Pulse
     if (pulseRingRef.current) {

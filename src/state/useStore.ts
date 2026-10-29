@@ -64,7 +64,10 @@ interface AppState {
   activeTurnDirections: TurnDirection[];
   totalPathDistance: number;
   estimatedTimeSeconds: number;
-  isAutoWalking: boolean;
+  isAutoWalking: boolean; // Autopilot preview
+  isNavigating: boolean;  // Active turn-by-turn navigation session
+  isUserWalking: boolean; // True while the user is actively walking (holding Walk button, pressing W, or pushing joystick)
+  navigationProgress: number; // 0 to 1 along path
   isEmergency: boolean;
 
   // Alignment Mode & Dynamic Plan
@@ -100,6 +103,9 @@ interface AppState {
   setNavigationRoute: (path: [number, number, number][], directions: TurnDirection[], distance: number) => void;
   clearNavigation: () => void;
   setIsAutoWalking: (val: boolean) => void;
+  setIsNavigating: (val: boolean) => void;
+  setIsUserWalking: (val: boolean) => void;
+  setNavigationProgress: (p: number) => void;
   triggerEmergencyMode: () => void;
   resetEmergencyMode: () => void;
 
@@ -154,6 +160,9 @@ export const useStore = create<AppState>((set) => ({
   totalPathDistance: 0,
   estimatedTimeSeconds: 0,
   isAutoWalking: false,
+  isNavigating: false,
+  isUserWalking: false,
+  navigationProgress: 0,
   isEmergency: false,
 
   isAlignMode: false,
@@ -186,7 +195,11 @@ export const useStore = create<AppState>((set) => ({
     activePath: path,
     activeTurnDirections: directions,
     totalPathDistance: distance,
-    estimatedTimeSeconds: Math.ceil(distance / 1.3),
+    estimatedTimeSeconds: Math.ceil(distance / 1.45),
+    isNavigating: true,
+    isUserWalking: false,
+    navigationProgress: 0,
+    cameraPerspective: 'follow',
   }),
   clearNavigation: () => set({
     activeDestination: null,
@@ -195,9 +208,15 @@ export const useStore = create<AppState>((set) => ({
     totalPathDistance: 0,
     estimatedTimeSeconds: 0,
     isAutoWalking: false,
+    isNavigating: false,
+    isUserWalking: false,
+    navigationProgress: 0,
     isEmergency: false,
   }),
   setIsAutoWalking: (val) => set({ isAutoWalking: val }),
+  setIsNavigating: (val) => set({ isNavigating: val }),
+  setIsUserWalking: (val) => set({ isUserWalking: val }),
+  setNavigationProgress: (p) => set({ navigationProgress: p }),
   triggerEmergencyMode: () => set({ isEmergency: true }),
   resetEmergencyMode: () => set({ isEmergency: false }),
 

@@ -10,7 +10,8 @@ export const VirtualJoystick: React.FC = () => {
   const userRotation = useStore((s) => s.userRotation);
   const scanConfig = useStore((s) => s.scanConfig);
   const isAlignMode = useStore((s) => s.isAlignMode);
-  const isAutoWalking = useStore((s) => s.isAutoWalking);
+  const activePath = useStore((s) => s.activePath);
+  const setIsUserWalking = useStore((s) => s.setIsUserWalking);
 
   const [isTouchDevice, setIsTouchDevice] = useState(false);
   const [knobOffset, setKnobOffset] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
@@ -25,17 +26,34 @@ export const VirtualJoystick: React.FC = () => {
     setIsTouchDevice(hasTouch);
   }, []);
 
-  // Smooth movement interval
+  // Smooth movement and navigation driving loop
   useEffect(() => {
-    if (isAlignMode || isAutoWalking) return;
+    if (isAlignMode) return;
 
     const interval = setInterval(() => {
       const { x: dx, y: dy } = currentDeltaRef.current;
-      if (Math.hypot(dx, dy) < 3) return;
+      const dist = Math.hypot(dx, dy);
+
+      if (dist < 3) {
+        if (activePath.length >= 2) {
+          setIsUserWalking(false);
+        }
+        return;
+      }
 
       const maxRadius = 38;
       const normX = dx / maxRadius;
       const normY = -dy / maxRadius; // invert Y for screen coords
+
+      // When actively following a navigation route, pushing forward drives the walking character along the path
+      if (activePath.length >= 2) {
+        if (normY > 0.2) {
+          setIsUserWalking(true);
+        } else {
+          setIsUserWalking(false);
+        }
+        return;
+      }
 
       const speed = (scanConfig.speed ?? 1.6) * 0.038;
       const moveX = (normX * Math.cos(userRotation) + normY * Math.sin(userRotation)) * speed;
@@ -71,7 +89,7 @@ export const VirtualJoystick: React.FC = () => {
     }, 25);
 
     return () => clearInterval(interval);
-  }, [userPosition, userRotation, isAlignMode, isAutoWalking, scanConfig, setUserPosition]);
+  }, [userPosition, userRotation, isAlignMode, activePath, scanConfig, setUserPosition, setIsUserWalking]);
 
   const handleTouchStart = (e: React.TouchEvent<HTMLDivElement>) => {
     if (activeTouchId.current !== null || !padRef.current) return;
@@ -99,6 +117,7 @@ export const VirtualJoystick: React.FC = () => {
         setIsInteracting(false);
         setKnobOffset({ x: 0, y: 0 });
         currentDeltaRef.current = { x: 0, y: 0 };
+        setIsUserWalking(false);
       }
     }
   };
@@ -130,9 +149,7 @@ export const VirtualJoystick: React.FC = () => {
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
       onTouchCancel={handleTouchEnd}
-      className={`fixed bottom-16 sm:bottom-20 left-4 z-40 w-28 h-28 rounded-full flex items-center justify-center touch-none select-none transition-opacity duration-300 pointer-events-auto ${
-        isAutoWalking ? 'opacity-30 pointer-events-none' : 'opacity-85 hover:opacity-100'
-      }`}
+      className="fixed bottom-16 sm:bottom-20 left-4 z-40 w-28 h-28 rounded-full flex items-center justify-center touch-none select-none transition-opacity duration-300 pointer-events-auto opacity-85 hover:opacity-100"
     >
       {/* Outer Glow Ring & Base Pad */}
       <div className="absolute inset-0 rounded-full bg-[rgba(15,17,20,0.65)] backdrop-blur-md border border-cyan-500/30 shadow-2xl shadow-cyan-500/10 flex items-center justify-center">
