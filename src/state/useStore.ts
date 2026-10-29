@@ -56,6 +56,7 @@ interface AppState {
   // User state in 3D
   userPosition: [number, number, number];
   userRotation: number;
+  cameraPerspective: 'follow' | 'fpv'; // 'follow' = Google Maps 3D walking character view, 'fpv' = first-person eye view
 
   // Navigation
   activeDestination: POI | null;
@@ -93,6 +94,8 @@ interface AppState {
   setSplatLoading: (loading: Partial<AppState['splatLoading']>) => void;
   setUserPosition: (pos: [number, number, number]) => void;
   setUserRotation: (yaw: number) => void;
+  setCameraPerspective: (p: 'follow' | 'fpv') => void;
+  toggleCameraPerspective: () => void;
   setDestination: (poi: POI | null) => void;
   setNavigationRoute: (path: [number, number, number][], directions: TurnDirection[], distance: number) => void;
   clearNavigation: () => void;
@@ -143,6 +146,7 @@ export const useStore = create<AppState>((set) => ({
 
   userPosition: [DEFAULT_CONFIG.start[0], DEFAULT_CONFIG.eyeHeight, DEFAULT_CONFIG.start[1]],
   userRotation: (DEFAULT_CONFIG.startYaw * Math.PI) / 180,
+  cameraPerspective: 'follow', // Default to 3D Google Maps Follow View so walking man is visible
 
   activeDestination: null,
   activePath: [],
@@ -175,6 +179,8 @@ export const useStore = create<AppState>((set) => ({
   setSplatLoading: (loading) => set((s) => ({ splatLoading: { ...s.splatLoading, ...loading } })),
   setUserPosition: (pos) => set({ userPosition: pos }),
   setUserRotation: (yaw) => set({ userRotation: yaw }),
+  setCameraPerspective: (p) => set({ cameraPerspective: p }),
+  toggleCameraPerspective: () => set((s) => ({ cameraPerspective: s.cameraPerspective === 'follow' ? 'fpv' : 'follow' })),
   setDestination: (poi) => set({ activeDestination: poi }),
   setNavigationRoute: (path, directions, distance) => set({
     activePath: path,

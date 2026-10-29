@@ -11,8 +11,39 @@ import {
   Clock,
   X,
   AlertTriangle,
-  Footprints,
+  User,
+  Eye,
 } from 'lucide-react';
+
+// Google Maps Style Animated Walking Man Icon with Moving Legs & Arms
+const WalkingManIcon: React.FC<{ isWalking: boolean }> = ({ isWalking }) => (
+  <svg
+    viewBox="0 0 24 24"
+    className="w-4 h-4 text-cyan-400 overflow-visible shrink-0"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2.2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    {/* Head */}
+    <circle cx="12" cy="4" r="2.2" fill="currentColor" />
+    {/* Torso */}
+    <line x1="12" y1="6.5" x2="12" y2="12" />
+    {/* Left Leg */}
+    <g className={isWalking ? 'animate-walk-leg-left' : ''}>
+      <path d="M12 12l-2.6 4.2-1.6 4.5" />
+    </g>
+    {/* Right Leg */}
+    <g className={isWalking ? 'animate-walk-leg-right' : ''}>
+      <path d="M12 12l2.6 4.2 1.6 4.5" />
+    </g>
+    {/* Arms counter-swing */}
+    <g className={isWalking ? 'animate-walk-arms' : ''}>
+      <path d="M7.5 9.5l4.5 1 4.5-1" />
+    </g>
+  </svg>
+);
 
 export const DirectionHUD: React.FC = () => {
   const activeDestination = useStore((s) => s.activeDestination);
@@ -25,6 +56,8 @@ export const DirectionHUD: React.FC = () => {
   const isEmergency = useStore((s) => s.isEmergency);
   const userPosition = useStore((s) => s.userPosition);
   const activePath = useStore((s) => s.activePath);
+  const cameraPerspective = useStore((s) => s.cameraPerspective);
+  const toggleCameraPerspective = useStore((s) => s.toggleCameraPerspective);
 
   // Real-time dynamic distance & estimated time countdown matching real walking speed
   const { liveRemainingDistance, liveRemainingSeconds } = useMemo(() => {
@@ -74,18 +107,18 @@ export const DirectionHUD: React.FC = () => {
   // 1. COLLAPSED WALKING PILL WHILE ACTIVELY WALKING (RESPONSIVE TOP DOCK)
   if (isAutoWalking) {
     return (
-      <div className="fixed top-28 sm:top-24 left-1/2 -translate-x-1/2 z-30 select-none pointer-events-auto animate-in fade-in slide-in-from-top-2 duration-150 max-w-[94vw]">
+      <div className="fixed top-28 sm:top-24 left-1/2 -translate-x-1/2 z-30 select-none pointer-events-auto animate-in fade-in slide-in-from-top-2 duration-150 max-w-[95vw]">
         <div className="flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full bg-[rgba(15,17,20,0.85)] backdrop-blur-xl border border-cyan-500/40 shadow-2xl shadow-cyan-500/10 text-xs">
           
           {/* Animated Walking Man Badge */}
-          <div className="flex items-center gap-1 sm:gap-1.5 px-2 sm:px-2.5 py-0.5 rounded-full bg-cyan-500/20 border border-cyan-500/30 text-cyan-300 font-bold shrink-0">
-            <Footprints className="w-3.5 h-3.5 text-cyan-400 animate-bounce" />
+          <div className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-cyan-500/20 border border-cyan-500/30 text-cyan-300 font-bold shrink-0">
+            <WalkingManIcon isWalking={true} />
             <span className="text-[10px] sm:text-[11px] tracking-wide uppercase">WALKING</span>
             <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-ping ml-0.5" />
           </div>
 
           <div className="flex items-center gap-1 text-white font-semibold text-xs min-w-0">
-            <span className="hidden xs:inline">to</span>
+            <span className="hidden xs:inline text-slate-400">to</span>
             <span className="text-cyan-400 font-bold truncate max-w-[85px] xs:max-w-[120px] sm:max-w-[150px]">
               {activeDestination.name}
             </span>
@@ -97,6 +130,29 @@ export const DirectionHUD: React.FC = () => {
             <span className="text-slate-500">•</span>
             <span className="text-slate-200">{liveRemainingSeconds}s</span>
           </div>
+
+          {/* Perspective Switcher Button: 3D Follow vs FPV Eye View */}
+          <button
+            onClick={toggleCameraPerspective}
+            className={`flex items-center gap-1 px-2 py-1 rounded-full border text-[10px] transition-all cursor-pointer shrink-0 ${
+              cameraPerspective === 'follow'
+                ? 'bg-cyan-500/20 border-cyan-500/40 text-cyan-300'
+                : 'bg-white/5 border-white/10 text-slate-400 hover:text-white'
+            }`}
+            title={cameraPerspective === 'follow' ? 'Viewing 3D Walking Man (Click for Eye View)' : 'Viewing Eye Level (Click for 3D Follow)'}
+          >
+            {cameraPerspective === 'follow' ? (
+              <>
+                <User className="w-3 h-3 text-cyan-400" />
+                <span className="hidden sm:inline">3D Man</span>
+              </>
+            ) : (
+              <>
+                <Eye className="w-3 h-3 text-slate-300" />
+                <span className="hidden sm:inline">FPV</span>
+              </>
+            )}
+          </button>
 
           <button
             onClick={() => setIsAutoWalking(false)}
@@ -130,7 +186,8 @@ export const DirectionHUD: React.FC = () => {
                 </span>
               ) : (
                 <span className="flex items-center gap-1">
-                  <Navigation className="w-3 h-3 text-cyan-400" /> Destination
+                  <WalkingManIcon isWalking={false} />
+                  <span>Google Maps Indoor Route</span>
                 </span>
               )}
             </div>
@@ -140,13 +197,28 @@ export const DirectionHUD: React.FC = () => {
             <p className="text-[11px] text-slate-400 truncate">{activeDestination.roomName}</p>
           </div>
 
-          <button
-            onClick={clearNavigation}
-            className="p-1.5 rounded-lg hover:bg-white/10 text-slate-400 hover:text-white transition-colors cursor-pointer"
-            title="Cancel route"
-          >
-            <X className="w-4 h-4" />
-          </button>
+          <div className="flex items-center gap-1">
+            {/* View Mode Toggle: 3D Follow vs FPV */}
+            <button
+              onClick={toggleCameraPerspective}
+              className={`p-1.5 rounded-lg border text-xs transition-colors cursor-pointer ${
+                cameraPerspective === 'follow'
+                  ? 'bg-cyan-500/20 border-cyan-500/40 text-cyan-300'
+                  : 'bg-white/5 border-white/10 text-slate-400 hover:text-white'
+              }`}
+              title={cameraPerspective === 'follow' ? '3D Follow View (Showing Walking Man)' : 'First-Person View'}
+            >
+              {cameraPerspective === 'follow' ? <User className="w-3.5 h-3.5 text-cyan-400" /> : <Eye className="w-3.5 h-3.5" />}
+            </button>
+
+            <button
+              onClick={clearNavigation}
+              className="p-1.5 rounded-lg hover:bg-white/10 text-slate-400 hover:text-white transition-colors cursor-pointer"
+              title="Cancel route"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
         </div>
 
         {/* Next Turn Instruction with Direction Icon */}

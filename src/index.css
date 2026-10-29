@@ -69,3 +69,27 @@ html, body {
 .radar-anim {
   animation: radar-pulse 2s infinite ease-in-out;
 }
+
+/* Google Maps Walking Man Avatar Keyframe Animations */
+@keyframes walkLegLeft {
+  0%, 100% { transform: rotate(-22deg); transform-origin: 12px 12px; }
+  50% { transform: rotate(22deg); transform-origin: 12px 12px; }
+}
+@keyframes walkLegRight {
+  0%, 100% { transform: rotate(22deg); transform-origin: 12px 12px; }
+  50% { transform: rotate(-22deg); transform-origin: 12px 12px; }
+}
+@keyframes walkArms {
+  0%, 100% { transform: rotate(14deg); transform-origin: 12px 9px; }
+  50% { transform: rotate(-14deg); transform-origin: 12px 9px; }
+}
+.animate-walk-leg-left {
+  animation: walkLegLeft 0.52s infinite ease-in-out;
+}
+.animate-walk-leg-right {
+  animation: walkLegRight 0.52s infinite ease-in-out;
+}
+.animate-walk-arms {
+  animation: walkArms 0.52s infinite ease-in-out;
+}
+

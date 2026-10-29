@@ -12,6 +12,7 @@ export const FirstPersonControls: React.FC = () => {
   const setUserPosition = useStore((s) => s.setUserPosition);
   const userRotation = useStore((s) => s.userRotation);
   const setUserRotation = useStore((s) => s.setUserRotation);
+  const cameraPerspective = useStore((s) => s.cameraPerspective);
   const isAutoWalking = useStore((s) => s.isAutoWalking);
   const activePath = useStore((s) => s.activePath);
   const activeDestination = useStore((s) => s.activeDestination);
@@ -203,15 +204,39 @@ export const FirstPersonControls: React.FC = () => {
     const damp = Math.min(1.0, delta * 24);
     currentEuler.current.x += (targetEuler.current.x - currentEuler.current.x) * damp;
     currentEuler.current.y += (targetEuler.current.y - currentEuler.current.y) * damp;
-    camera.quaternion.setFromEuler(currentEuler.current);
-    setUserRotation(currentEuler.current.y);
+    if (!isAutoWalking) {
+      setUserRotation(currentEuler.current.y);
+    }
+
+    const updateCamera = (posX: number, posZ: number) => {
+      if (cameraPerspective === 'follow') {
+        const yaw = isAutoWalking ? userRotation : currentEuler.current.y;
+        const followDist = 1.75;
+        const camX = posX + Math.sin(yaw) * followDist;
+        const camZ = posZ + Math.cos(yaw) * followDist;
+        const camY = (scanConfig.eyeHeight ?? 1.6) + 0.35;
+        camera.position.set(camX, camY, camZ);
+
+        // Look at chest/path ahead of the avatar
+        const lookAhead = 0.5;
+        const lookX = posX - Math.sin(yaw) * lookAhead;
+        const lookZ = posZ - Math.cos(yaw) * lookAhead;
+        const lookY = 1.05;
+        camera.lookAt(lookX, lookY, lookZ);
+      } else {
+        const eyeH = scanConfig.eyeHeight ?? 1.6;
+        camera.position.set(posX, eyeH, posZ);
+        if (isAutoWalking) {
+          currentEuler.current.set(0, userRotation, 0, 'YXZ');
+          targetEuler.current.set(0, userRotation, 0, 'YXZ');
+        }
+        camera.quaternion.setFromEuler(currentEuler.current);
+      }
+    };
 
     // In auto-walk, position is driven by useAutoWalkController & camera smoothly turns
     if (isAutoWalking) {
-      camera.position.set(userPosition[0], scanConfig.eyeHeight ?? 1.6, userPosition[2]);
-      currentEuler.current.set(0, userRotation, 0, 'YXZ');
-      targetEuler.current.set(0, userRotation, 0, 'YXZ');
-      camera.quaternion.setFromEuler(currentEuler.current);
+      updateCamera(userPosition[0], userPosition[2]);
       return;
     }
 
@@ -244,7 +269,7 @@ export const FirstPersonControls: React.FC = () => {
     velocity.current.lerp(targetVel, accelRate);
 
     if (velocity.current.lengthSq() < 0.0001) {
-      camera.position.y = scanConfig.eyeHeight ?? 1.6;
+      updateCamera(userPosition[0], userPosition[2]);
       return;
     }
 
@@ -280,10 +305,9 @@ export const FirstPersonControls: React.FC = () => {
       );
     }
 
-    // Eye-height lock (no head-bob)
     const eyeH = scanConfig.eyeHeight ?? 1.6;
-    camera.position.set(nextX, eyeH, nextZ);
     setUserPosition([nextX, eyeH, nextZ]);
+    updateCamera(nextX, nextZ);
 
     checkOffPath(nextX, nextZ);
   });

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useStore } from '../state/useStore';
-import { MapPin, Compass, Settings, HelpCircle, Play } from 'lucide-react';
+import { MapPin, Compass, Settings, HelpCircle, Play, User, Eye } from 'lucide-react';
 import { DestinationsDrawer } from './DestinationsDrawer';
 import { SettingsModal } from './SettingsModal';
 import { HelpModal } from './HelpModal';
@@ -14,6 +14,8 @@ export const BottomDock: React.FC = () => {
   const [isHelpOpen, setIsHelpOpen] = useState(false);
 
   const userPosition = useStore((s) => s.userPosition);
+  const cameraPerspective = useStore((s) => s.cameraPerspective);
+  const toggleCameraPerspective = useStore((s) => s.toggleCameraPerspective);
   const setDestination = useStore((s) => s.setDestination);
   const setNavigationRoute = useStore((s) => s.setNavigationRoute);
   const setIsAutoWalking = useStore((s) => s.setIsAutoWalking);
@@ -90,6 +92,31 @@ export const BottomDock: React.FC = () => {
             <Compass className="w-4 h-4 text-emerald-400 group-hover:rotate-45 transition-transform" />
             <span className="hidden sm:inline">Tour</span>
             <span className="text-[10px] text-slate-500 font-mono hidden md:inline">[T]</span>
+          </button>
+
+          <div className="h-4 w-px bg-white/10" />
+
+          {/* Perspective View Toggle: 3D Follow (Walking Man) vs FPV */}
+          <button
+            onClick={toggleCameraPerspective}
+            className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-xl text-xs font-semibold active:scale-95 transition-all cursor-pointer group ${
+              cameraPerspective === 'follow'
+                ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30'
+                : 'text-slate-300 hover:text-white hover:bg-white/10'
+            }`}
+            title={cameraPerspective === 'follow' ? 'Viewing 3D Walking Man (Click for FPV Eye Level)' : 'Viewing Eye Level (Click for 3D Follow View)'}
+          >
+            {cameraPerspective === 'follow' ? (
+              <>
+                <User className="w-4 h-4 text-cyan-400 group-hover:scale-110 transition-transform" />
+                <span className="hidden sm:inline">3D Man</span>
+              </>
+            ) : (
+              <>
+                <Eye className="w-4 h-4 text-slate-300 group-hover:scale-110 transition-transform" />
+                <span className="hidden sm:inline">FPV</span>
+              </>
+            )}
           </button>
 
           <div className="h-4 w-px bg-white/10" />

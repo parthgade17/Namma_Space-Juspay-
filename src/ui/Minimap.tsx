@@ -107,7 +107,7 @@ export const Minimap: React.FC = () => {
         ctx.setLineDash([]);
       }
 
-      // User Dot + FOV
+      // User Google Maps Walking Avatar on 2D Plan
       const ux = toMapX(userPosition[0]);
       const uy = toMapY(userPosition[2]);
 
@@ -115,17 +115,46 @@ export const Minimap: React.FC = () => {
       ctx.translate(ux, uy);
       ctx.rotate(userRotation + Math.PI);
 
-      ctx.fillStyle = isEmergency ? 'rgba(239, 68, 68, 0.25)' : 'rgba(34, 211, 238, 0.25)';
+      // 1. Forward Directional Flashlight Beam
+      ctx.fillStyle = isEmergency ? 'rgba(239, 68, 68, 0.28)' : 'rgba(34, 211, 238, 0.28)';
       ctx.beginPath();
       ctx.moveTo(0, 0);
-      ctx.arc(0, 0, 20, -Math.PI / 4, Math.PI / 4);
+      ctx.arc(0, 0, 24, -Math.PI / 4, Math.PI / 4);
       ctx.closePath();
       ctx.fill();
 
+      // 2. Google Maps Floor Beacon Puck
+      ctx.fillStyle = isEmergency ? '#ef4444' : '#06b6d4';
+      ctx.beginPath();
+      ctx.arc(0, 0, 6, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+
+      // 3. Walking Person Icon / Heading Chevron
       ctx.fillStyle = '#ffffff';
       ctx.beginPath();
-      ctx.arc(0, 0, 3.5, 0, Math.PI * 2);
+      ctx.moveTo(0, 5);
+      ctx.lineTo(-3, -2);
+      ctx.lineTo(3, -2);
+      ctx.closePath();
       ctx.fill();
+
+      // Head dot
+      ctx.beginPath();
+      ctx.arc(0, -3.5, 1.5, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Walking pulse wave indicator
+      if (isAutoWalking) {
+        ctx.strokeStyle = '#22d3ee';
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.arc(0, 0, 11, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+
       ctx.restore();
 
     } else {
@@ -182,21 +211,45 @@ export const Minimap: React.FC = () => {
       ctx.arc(cx, cy, radius * 0.85, 0, Math.PI * 2);
       ctx.stroke();
 
-      // Heading arrow (pointing up)
-      ctx.fillStyle = '#22d3ee';
+      // Forward Flashlight Beam (Pointing UP in radar)
+      ctx.fillStyle = isEmergency ? 'rgba(239, 68, 68, 0.24)' : 'rgba(34, 211, 238, 0.24)';
       ctx.beginPath();
-      ctx.moveTo(cx, cy - 8);
-      ctx.lineTo(cx - 4, cy + 5);
-      ctx.lineTo(cx + 4, cy + 5);
+      ctx.moveTo(cx, cy);
+      ctx.arc(cx, cy, radius * 0.75, -Math.PI / 2 - 0.42, -Math.PI / 2 + 0.42);
       ctx.closePath();
       ctx.fill();
+
+      // Google Maps Center Blue Beacon Puck
+      ctx.fillStyle = isEmergency ? '#ef4444' : '#06b6d4';
+      ctx.beginPath();
+      ctx.arc(cx, cy, 7, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+
+      // Stylized Walking Man Figure inside puck
+      ctx.fillStyle = '#ffffff';
+      ctx.beginPath();
+      ctx.arc(cx, cy - 3, 1.8, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 1.2;
+      ctx.beginPath();
+      ctx.moveTo(cx, cy - 1);
+      ctx.lineTo(cx, cy + 2);
+      ctx.lineTo(cx - 2.5, cy + 5);
+      ctx.moveTo(cx, cy + 2);
+      ctx.lineTo(cx + 2.5, cy + 5);
+      ctx.stroke();
 
       // Walking pulse wave indicator
       if (isAutoWalking) {
         ctx.strokeStyle = '#22d3ee';
         ctx.lineWidth = 1.5;
         ctx.beginPath();
-        ctx.arc(cx, cy, 12, 0, Math.PI * 2);
+        ctx.arc(cx, cy, 13, 0, Math.PI * 2);
         ctx.stroke();
       }
 
